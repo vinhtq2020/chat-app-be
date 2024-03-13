@@ -21,7 +21,11 @@ func main() {
 		return
 	}
 
-	app := app.NewApp(db)
+	app, err := app.NewApp(db)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 
 	route.Route(r, app)
 	r.Run(":8080")

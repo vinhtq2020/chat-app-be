@@ -7,16 +7,17 @@ import (
 	"go-service/internal/auth/usecase"
 	"go-service/internal/auth/validator"
 	user_repo "go-service/internal/user/repository"
+	"go-service/pkg/sql/pq"
+	"go-service/pkg/validate"
 
-	validate "github.com/go-playground/validator/v10"
 	"gorm.io/gorm"
 )
 
-func NewAuthTransport(db *gorm.DB, validate *validate.Validate) domain.AuthTransport {
-	rp := repository.NewAuthRepository(db, "users_login_data")
-	authValidator := validator.NewAuthValidator(validate)
+func NewAuthTransport(db *gorm.DB, validate validate.Validate, secretKey string, toArray pq.Array) domain.AuthTransport {
+	rp := repository.NewAuthRepository(db, "users_login_data", toArray)
+	authValidator := validator.NewAuthValidator(db, "users_login_data", validate, toArray)
 	userInfoRepository := user_repo.NewUserRepository(db, "users")
-	sv := usecase.NewAuthUsecase(rp, authValidator, userInfoRepository)
+	sv := usecase.NewAuthUsecase(rp, authValidator, userInfoRepository, secretKey)
 	hl := delivery.NewAuthHandler(sv)
 	return hl
 }

@@ -8,15 +8,17 @@ import (
 )
 
 type User struct {
-	Id        string     `json:"id,omitempty" gorm:"column:id;primaryKey"`
-	UserName  *string    `json:"userName,omitempty" gorm:"column:user_name"`
-	Email     *string    `json:"email,omitempty" gorm:"column:email"`
-	BirthDate *time.Time `json:"birthDate,omitempty" gorm:"column:birth_date"`
-	Phone     *string    `json:"phone,omitempty" gorm:"column:phone"`
-	CreatedAt *time.Time `json:"createdAt,omitempty" gorm:"column:created_at"`
-	CreatedBy *time.Time `json:"createdBy,omitempty" gorm:"column:created_by"`
-	UpdatedAt *time.Time `json:"updatedAt,omitempty" gorm:"column:updated_at"`
-	UpdatedBy *time.Time `json:"updatedBy,omitempty" gorm:"column:updated_by"`
+	Id         string     `json:"id,omitempty" gorm:"column:id;primaryKey"`
+	UserName   *string    `json:"userName,omitempty" gorm:"column:user_name"`
+	FirstName  *string    `json:"email,omitempty" gorm:"column:first_name"`
+	LastName   *string    `json:"lastName,omitempty" gorm:"column:last_name"`
+	MiddleName *string    `json:"middleName,omitempty" gorm:"column:middle_name"`
+	BirthDate  *time.Time `json:"birthDate,omitempty" gorm:"column:birth_date"`
+	CreatedAt  *time.Time `json:"createdAt,omitempty" gorm:"column:created_at"`
+	CreatedBy  *time.Time `json:"createdBy,omitempty" gorm:"column:created_by"`
+	UpdatedAt  *time.Time `json:"updatedAt,omitempty" gorm:"column:updated_at"`
+	UpdatedBy  *time.Time `json:"updatedBy,omitempty" gorm:"column:updated_by"`
+	Version    int64      `json:"version,omitempty" gorm:"column:version"`
 }
 
 func (u *User) Scan(v interface{}) error {

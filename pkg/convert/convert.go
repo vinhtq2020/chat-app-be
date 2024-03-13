@@ -13,6 +13,7 @@ func convertObjectToMap(obj interface{}) map[string]interface{} {
 	return mapObj
 }
 
+// convert object to map. Field name of map is used tag json
 func ToMapOmitEmpty(obj interface{}) map[string]interface{} {
 	modelType := reflect.TypeOf(obj)
 	modelValue := reflect.ValueOf(obj)

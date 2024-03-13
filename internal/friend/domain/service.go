@@ -1,4 +1,4 @@
 package domain
 
-type RelationService interface {
+type FriendService interface {
 }

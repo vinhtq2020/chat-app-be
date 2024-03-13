@@ -1,3 +1,3 @@
 package domain
 
-type RelationRepository interface{}
+type FriendRepository interface{}

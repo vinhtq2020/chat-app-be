@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Route(r *gin.Engine, app app.App) {
+func Route(r *gin.Engine, app *app.App) {
 	http_user.NewRoute(r.Group("/user"), app.User)
 	http_room.NewRoute(r.Group("/room"), app.Room)
 	http_auth.NewRoute(r.Group("/auth"), app.Auth)

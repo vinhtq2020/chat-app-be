@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"go-service/pkg/convert"
 	"time"
 )
 
@@ -24,28 +25,55 @@ func generateToken(header Header, payload map[string]interface{}, secretKey stri
 	return token
 }
 
-func hmacsha256(input string, secretKey string) []byte {
+func hmacsha256(input string, secretKey string) string {
 	hash := hmac.New(sha256.New, []byte(secretKey))
 	hash.Write([]byte(input))
-	return hash.Sum(nil)
+	expectedMAC := hash.Sum(nil)
+	signature := base64.RawURLEncoding.EncodeToString(expectedMAC)
+
+	return signature
 }
 
-func GenerateTokens(userId string, username string, secretKey string) TokenData {
+func GenerateAccessToken(userId string, username string, secretKey string, duration time.Duration) (string, AccessTokenPayload) {
+	header := Header{Algorithm: "HS256", Type: "JWT"}
+	accessPayload := AccessTokenPayload{
+		UserId:     userId,
+		Username:   username,
+		IssuedAt:   time.Now().Unix(),
+		Expiration: time.Now().Add(duration).Unix(),
+	}
+
+	accessPayloadMap := convert.ToMapOmitEmpty(accessPayload)
 	accessToken := generateToken(
-		Header{Algorithm: "HS256", Type: "JWT"},
-		map[string]interface{}{
-			"userId":   userId,
-			"username": username,
-			"exp":      time.Minute * 15,
-		}, secretKey)
+		header,
+		accessPayloadMap, secretKey)
+
+	return accessToken, accessPayload
+}
+
+func GereateRefreshToken(userId string, username string, secretKey string, duration time.Duration) (string, RefreshTokenPayload) {
+	header := Header{Algorithm: "HS256", Type: "JWT"}
+
+	refreshPayload := RefreshTokenPayload{
+		UserId:     userId,
+		IssuedAt:   time.Now().Unix(),
+		Expiration: time.Now().Add(duration).Unix(),
+	}
+
+	refreshTokenPayloadMap := convert.ToMapOmitEmpty(refreshPayload)
 	refreshToken := generateToken(
-		Header{Algorithm: "HS256", Type: "JWT"},
-		map[string]interface{}{
-			"userId": userId,
-			"exp":    time.Hour * 24 * 7,
-		}, secretKey)
+		header,
+		refreshTokenPayloadMap,
+		secretKey)
+	return refreshToken, refreshPayload
+}
+
+func GenerateTokens(userId string, username string, secretKey string, accessTokenDuration time.Duration, refreshTokenDuration time.Duration) TokenData {
+	accessToken, _ := GenerateAccessToken(userId, username, secretKey, accessTokenDuration)
+	refreshToken, _ := GereateRefreshToken(userId, username, secretKey, refreshTokenDuration)
 	return TokenData{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
+		TokenType:    "bearer",
 	}
 }

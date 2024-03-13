@@ -7,5 +7,5 @@ import (
 )
 
 func NewRoute(r *gin.RouterGroup, handler domain.FriendTransport) {
-
+	
 }

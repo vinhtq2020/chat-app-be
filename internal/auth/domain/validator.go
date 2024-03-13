@@ -7,6 +7,7 @@ import (
 )
 
 type UserLoginDataValidator interface {
-	ValidateLogin(*gin.Context, UserLoginData) ([]validate.ErrorMsg, error)
+	ValidateLogin(e *gin.Context, email string) ([]validate.ErrorMsg, error)
 	ValidateEmailGoogle(e *gin.Context, email string) ([]validate.ErrorMsg, error)
+	ValidateRegister(e *gin.Context, user UserLoginData) ([]validate.ErrorMsg, error)
 }

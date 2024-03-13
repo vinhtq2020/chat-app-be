@@ -3,7 +3,8 @@ create table if not exists users (
     user_name varchar(255),
     first_name varchar(255),
     last_name varchar(255),
-    midde_name varchar(255),
+    middle_name varchar(255),
+    birth_date timestamp,
     created_at timestamp default  CURRENT_TIMESTAMP,
     created_by varchar(255),
     updated_at timestamp default  CURRENT_TIMESTAMP,
@@ -15,6 +16,7 @@ create table if not exists users_login_data (
     id varchar(255) primary key, 
     user_name varchar(255),
     email varchar(255),
+    phone varchar(255),
     password_hash varchar(255),
     created_by varchar(255),
     created_at timestamp default CURRENT_TIMESTAMP,
@@ -40,10 +42,23 @@ create table if not exists rooms(
 create table if not exists sequences(
     name varchar(255) primary key,
     sequence_no int4  default 1
-)
+);
 
 create table if not exists relations(
-    userId1 varchar(255) primary key,
-    userId2 varchar(255) primary key,
-    status varchar(255) primary key
-)
+    user_id1 varchar(255),
+    user_id2 varchar(255),
+    status varchar(255),
+    primary key(user_id1, user_id2)
+);
+
+create table if not exists refresh_tokens(
+    user_id varchar(255),
+    token varchar(255),
+    expiry int8,
+    created_at timestamp,
+    updated_at timestamp,
+    ip_address varchar(255),
+    device_id varchar(255),
+    primary key(session_id,user_id),
+);
+

@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -256,8 +257,10 @@ func StructScan(src interface{}, columnIndexes []string, toArray pq.Array) (r []
 	return r, err
 }
 
-func ExecuteTx(db *gorm.DB, ex func() (int64, error)) (int64, error) {
+func ExecuteTx(e *gin.Context, db *gorm.DB, ex func(tx *gorm.DB) (int64, error)) (int64, error) {
 	tx := db.Begin()
+	e.Set("tx", tx)
+
 	defer func() {
 		if r := recover(); r != nil {
 			tx.Rollback()
@@ -268,11 +271,19 @@ func ExecuteTx(db *gorm.DB, ex func() (int64, error)) (int64, error) {
 		return -1, err
 	}
 
-	res, err := ex()
+	res, err := ex(tx)
 	if err != nil {
 		tx.Rollback()
 		return -1, err
 	}
-	commit := tx.Commit()
-	return res, commit.Error
+	return res, tx.Commit().Error
+}
+
+func GetTx(e *gin.Context, db *gorm.DB) *gorm.DB {
+	tx, exist := e.Get("tx")
+	if exist {
+		db = tx.(*gorm.DB)
+	}
+
+	return db
 }
