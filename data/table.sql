@@ -53,12 +53,13 @@ create table if not exists relations(
 
 create table if not exists refresh_tokens(
     user_id varchar(255),
+    device_id varchar(255),
+    browser varchar(255),
+    ip_address varchar(255),
     token varchar(255),
     expiry int8,
     created_at timestamp,
     updated_at timestamp,
-    ip_address varchar(255),
-    device_id varchar(255),
-    primary key(session_id,user_id),
+    primary key(user_id, ip_address, browser, device_id)
 );
 

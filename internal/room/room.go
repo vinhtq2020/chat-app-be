@@ -5,7 +5,7 @@ import (
 	"go-service/internal/room/domain"
 	"go-service/internal/room/repository"
 	"go-service/internal/room/usecase"
-	"go-service/pkg/sql/pq"
+	"go-service/pkg/database/sql/pq"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"

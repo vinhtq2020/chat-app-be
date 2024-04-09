@@ -3,8 +3,8 @@ package validator
 import (
 	"fmt"
 	"go-service/internal/auth/domain"
-	"go-service/pkg/sql"
-	"go-service/pkg/sql/pq"
+	"go-service/pkg/database/sql"
+	"go-service/pkg/database/sql/pq"
 	"go-service/pkg/validate"
 	"net/mail"
 	"strings"

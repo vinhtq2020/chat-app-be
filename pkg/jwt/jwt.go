@@ -75,5 +75,6 @@ func GenerateTokens(userId string, username string, secretKey string, accessToke
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		TokenType:    "bearer",
+		UserId:       userId,
 	}
 }

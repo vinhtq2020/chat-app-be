@@ -1,10 +1,11 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	"go-service/internal/auth/domain"
-	"go-service/pkg/sql"
-	"go-service/pkg/sql/pq"
+	"go-service/pkg/database/sql"
+	"go-service/pkg/database/sql/pq"
 	"reflect"
 
 	"github.com/gin-gonic/gin"
@@ -76,6 +77,17 @@ func (r *AuthRepository) AddRefreshToken(e *gin.Context, refreshToken domain.Ref
 	return res, err
 }
 
+func (r *AuthRepository) RemoveRefreshToken(e *gin.Context, userId string, ipAddress string, deviceId string, browser string) (int64, error) {
+	qr := "delete from refresh_tokens where user_id = $1 and ip_address = $2 and device_id = $3 and browser = $4"
+	res, err := sql.Exec(r.db, qr, userId, ipAddress, deviceId, browser)
+	if err != nil {
+		return -1, err
+	}
+	if res == 0 {
+		return 0, errors.New("row not found")
+	}
+	return res, nil
+}
 func (r *AuthRepository) buildParam(num int) string {
 	return fmt.Sprintf("$%v", num)
 }

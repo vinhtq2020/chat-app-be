@@ -1,33 +1,52 @@
 package app
 
 import (
+	"context"
+	"fmt"
 	"go-service/internal/auth"
 	auth_domain "go-service/internal/auth/domain"
 	"go-service/internal/configs"
+	querysearch "go-service/internal/query_search"
+	query_search_domain "go-service/internal/query_search/domain"
 	"go-service/internal/room"
 	room_domain "go-service/internal/room/domain"
 	"go-service/internal/sequence"
+	"go-service/internal/user"
 	user_domain "go-service/internal/user/domain"
+	"go-service/pkg/cron"
+	"go-service/pkg/database/mongo"
+	"go-service/pkg/database/postgres"
+	"go-service/pkg/logger"
 	"go-service/pkg/validate"
 	"os"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/websocket"
 	"github.com/lib/pq"
 	"gopkg.in/yaml.v3"
-	"gorm.io/gorm"
 )
 
 type App struct {
-	Auth auth_domain.AuthTransport
-	User user_domain.UserTransport
-	Room room_domain.RoomTransport
-	db   *gorm.DB
+	Auth        auth_domain.AuthTransport
+	User        user_domain.UserTransport
+	Room        room_domain.RoomTransport
+	QuerySearch query_search_domain.QuerySearchTransport
 }
 
-func NewApp(db *gorm.DB) (*App, error) {
+func NewApp(logger *logger.Logger) (*App, error) {
+	db, err := postgres.NewPostgresDb()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = mongo.NewMongoClient(context.Background(), mongo.MongoConfig{URI: "mongodb://root:Abcd1234@mongo:27017/"})
+	if err != nil {
+		return nil, err
+
+	}
 	toArray := pq.Array
 	validator := validator.New(validator.WithRequiredStructEnabled())
 	validator.RegisterTagNameFunc(func(fld reflect.StructField) string {
@@ -60,10 +79,22 @@ func NewApp(db *gorm.DB) (*App, error) {
 
 	auth := auth.NewAuthTransport(db, validate, configs.AccessTokenSecretKey, toArray)
 	room := room.NewRoomTransport(db, sequenceService.Next, upgrader, toArray)
+	user := user.NewUserTransport(db, toArray)
+	querySearch := querysearch.NewQuerySearch(logger)
 
+	scheduler, err := cron.NewSchedule(3 * time.Second)
+	if err != nil {
+		return nil, err
+	}
+	logCron := cron.NewCron()
+	logCron.AddJob(scheduler, cron.JobFunc(func() {
+		fmt.Println(time.Now())
+	}))
+	go logCron.Start()
 	return &App{
-		Room: room,
-		db:   db,
-		Auth: auth,
+		Auth:        auth,
+		User:        user,
+		Room:        room,
+		QuerySearch: querySearch,
 	}, nil
 }

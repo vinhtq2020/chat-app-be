@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 	"go-service/internal/sequence/domain"
-	"go-service/pkg/sql"
+	"go-service/pkg/database/sql"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"

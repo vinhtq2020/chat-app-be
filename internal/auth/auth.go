@@ -7,7 +7,7 @@ import (
 	"go-service/internal/auth/usecase"
 	"go-service/internal/auth/validator"
 	user_repo "go-service/internal/user/repository"
-	"go-service/pkg/sql/pq"
+	"go-service/pkg/database/sql/pq"
 	"go-service/pkg/validate"
 
 	"gorm.io/gorm"

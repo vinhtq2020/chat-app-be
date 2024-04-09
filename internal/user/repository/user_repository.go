@@ -3,7 +3,7 @@ package repository
 import (
 	"fmt"
 	"go-service/internal/user/domain"
-	"go-service/pkg/sql"
+	"go-service/pkg/database/sql"
 	"reflect"
 
 	"github.com/gin-gonic/gin"

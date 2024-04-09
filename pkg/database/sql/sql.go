@@ -5,7 +5,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"go-service/pkg/sql/pq"
+	"go-service/pkg/database/sql/pq"
 	"reflect"
 	"strings"
 

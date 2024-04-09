@@ -77,7 +77,7 @@ func (u *AuthUsecase) LoginWithGoogle(e *gin.Context, email string) ([]validate.
 
 }
 
-func (u *AuthUsecase) Login(e *gin.Context, email string, password string) ([]validate.ErrorMsg, *jwt.TokenData, error) {
+func (u *AuthUsecase) Login(e *gin.Context, email string, password string, browser string, ipAdress string, deviceId string) ([]validate.ErrorMsg, *jwt.TokenData, error) {
 	errs, err := u.Validator.ValidateLogin(e, email)
 	if err != nil || len(errs) > 0 {
 		return errs, nil, err
@@ -111,6 +111,9 @@ func (u *AuthUsecase) Login(e *gin.Context, email string, password string) ([]va
 		UserId:    userInfo.Id,
 		Token:     token.RefreshToken,
 		Expiry:    refreshTokenDuration,
+		IPAddress: ipAdress,
+		DeviceId:  deviceId,
+		Browser:   browser,
 		CreatedAt: time.Now(),
 	})
 
@@ -163,4 +166,8 @@ func (u *AuthUsecase) Register(e *gin.Context, userLoginData domain.UserLoginDat
 		return nil, -1, err
 	}
 	return nil, res, nil
+}
+
+func (u *AuthUsecase) Logout(e *gin.Context, userId string, browser string, ipAdress string, deviceId string) (int64, error) {
+	return u.repository.RemoveRefreshToken(e, userId, ipAdress, deviceId, browser)
 }
