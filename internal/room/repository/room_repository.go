@@ -1,13 +1,14 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"go-service/internal/room/domain"
-	"go-service/pkg/database/sql"
-	"go-service/pkg/database/sql/pq"
+	"go-service/pkg/database/postgres"
+	"go-service/pkg/database/postgres/pq"
+
 	"reflect"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -21,7 +22,7 @@ type RoomRepository struct {
 
 func NewRoomReposiory(db *gorm.DB, table string, toArray pq.Array) *RoomRepository {
 	modelType := reflect.TypeOf(domain.Room{})
-	primaryKey := sql.GetPrimaryKeys(modelType)
+	primaryKey := postgres.GetPrimaryKeys(modelType)
 	return &RoomRepository{
 		db:          db,
 		table:       table,
@@ -35,7 +36,7 @@ func (r *RoomRepository) buildParam(num int) string {
 	return fmt.Sprintf("$%v", num)
 }
 
-func (r *RoomRepository) All(ctx *gin.Context) ([]domain.Room, error) {
+func (r *RoomRepository) All(ctx context.Context) ([]domain.Room, error) {
 	qr := fmt.Sprintf("select * from %s", r.table)
 	var res []domain.Room
 	// rows, err := r.db.Raw(qr).Rows()
@@ -51,7 +52,7 @@ func (r *RoomRepository) All(ctx *gin.Context) ([]domain.Room, error) {
 	// 	}
 	// 	res = append(res, item)
 	// }
-	err := sql.QueryWithArray(r.db, &res, qr, r.toArray)
+	err := postgres.QueryWithArray(r.db, &res, qr, r.toArray)
 	if err != nil {
 		return nil, err
 	}
@@ -59,12 +60,12 @@ func (r *RoomRepository) All(ctx *gin.Context) ([]domain.Room, error) {
 }
 
 // Create implements domain.RoomRepository.
-func (r *RoomRepository) Create(ctx *gin.Context, room domain.Room) (int64, error) {
-	qr, param, err := sql.BuildToInsert(r.db, r.table, room, r.buildParam, r.modelType)
+func (r *RoomRepository) Create(ctx context.Context, room domain.Room) (int64, error) {
+	qr, param, err := postgres.BuildToInsert(r.db, r.table, room, r.buildParam, r.modelType)
 	if err != nil {
 		return -1, err
 	}
-	res, err := sql.Exec(r.db, qr, param...)
+	res, err := postgres.Exec(r.db, qr, param...)
 	if err != nil {
 		return -1, err
 	}
@@ -72,19 +73,19 @@ func (r *RoomRepository) Create(ctx *gin.Context, room domain.Room) (int64, erro
 }
 
 // Delete implements domain.RoomRepository.
-func (r *RoomRepository) Delete(ctx *gin.Context, id string) (int64, error) {
+func (r *RoomRepository) Delete(ctx context.Context, id string) (int64, error) {
 	qr := "Delete from %s where id = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
-	res, err := sql.Exec(r.db, stmt, id)
+	res, err := postgres.Exec(r.db, stmt, id)
 	return res, err
 }
 
 // Load implements domain.RoomRepository.
-func (r *RoomRepository) Load(ctx *gin.Context, id string) (*domain.Room, error) {
+func (r *RoomRepository) Load(ctx context.Context, id string) (*domain.Room, error) {
 	var res []domain.Room
 	qr := "select * from %s where id = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
-	err := sql.QueryWithArray(r.db, &res, stmt, r.toArray, id)
+	err := postgres.QueryWithArray(r.db, &res, stmt, r.toArray, id)
 	if err != nil || len(res) == 0 {
 		return nil, err
 	}
@@ -92,12 +93,12 @@ func (r *RoomRepository) Load(ctx *gin.Context, id string) (*domain.Room, error)
 }
 
 // Patch implements domain.RoomRepository.
-func (r *RoomRepository) Patch(ctx *gin.Context, room map[string]interface{}) (int64, error) {
-	qr, vals, err := sql.BuildToPatch(r.db, r.table, room, r.primaryKeys, r.buildParam)
+func (r *RoomRepository) Patch(ctx context.Context, room map[string]interface{}) (int64, error) {
+	qr, vals, err := postgres.BuildToPatch(r.db, r.table, room, r.primaryKeys, r.buildParam)
 	if err != nil {
 		return -1, err
 	}
-	res, err := sql.Exec(r.db, qr, vals...)
+	res, err := postgres.Exec(r.db, qr, vals...)
 	if err != nil {
 		return -1, err
 	}
@@ -105,6 +106,6 @@ func (r *RoomRepository) Patch(ctx *gin.Context, room map[string]interface{}) (i
 }
 
 // Update implements domain.RoomRepository.
-func (*RoomRepository) Update(ctx *gin.Context, Room domain.Room) {
+func (*RoomRepository) Update(ctx context.Context, Room domain.Room) {
 	panic("unimplemented")
 }

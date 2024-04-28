@@ -1,11 +1,13 @@
 package domain
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+)
 
 type UserTransport interface {
-	Search(e *gin.Context)
-	Load(e *gin.Context)
-	Create(e *gin.Context)
-	Patch(e *gin.Context)
-	Delete(e *gin.Context)
+	Search(w http.ResponseWriter, r *http.Request)
+	Load(w http.ResponseWriter, r *http.Request)
+	Create(w http.ResponseWriter, r *http.Request)
+	Patch(w http.ResponseWriter, r *http.Request)
+	Delete(w http.ResponseWriter, r *http.Request)
 }

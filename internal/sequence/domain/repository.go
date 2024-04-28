@@ -1,8 +1,8 @@
 package domain
 
-import "github.com/gin-gonic/gin"
+import "context"
 
 type SequenceRepository interface {
-	Next(c *gin.Context, module string) (int64, error)
-	GetSequence(c *gin.Context, module string) (int64, error)
+	Next(ctx context.Context, module string) (int64, error)
+	GetSequence(ctx context.Context, module string) (int64, error)
 }

@@ -2,14 +2,14 @@ package http
 
 import (
 	"go-service/internal/room/domain"
-
-	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
-func NewRoute(r *gin.RouterGroup, handler domain.RoomTransport) {
-	r.GET("", handler.All)
-	r.GET("/:id", handler.Load)
-	r.POST("", handler.Create)
-	r.PATCH("/:id", handler.Patch)
-	r.DELETE("/:id", handler.Delete)
+func NewRoute(r *http.ServeMux, handler domain.RoomTransport) {
+	path := "/room"
+	r.HandleFunc(http.MethodGet+" "+path, handler.All)
+	r.HandleFunc(http.MethodGet+" "+path+"/{id}", handler.Load)
+	r.HandleFunc(http.MethodPost+" "+path, handler.Create)
+	r.HandleFunc(http.MethodPatch+" "+path+"/{id}", handler.Patch)
+	r.HandleFunc(http.MethodDelete+" "+path+"/{id}", handler.Delete)
 }

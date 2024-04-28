@@ -5,7 +5,6 @@ import (
 	"log"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 )
 
@@ -33,8 +32,8 @@ func (l *Logger) LogDebug(msg string, fileName *string) {
 }
 
 func (l *Logger) log(level string, msg string, fileName *string) {
-	_, file, line, _ := runtime.Caller(1)
-	logMsg := fmt.Sprintf("%v | %v | %v | %v:%v | %v\n", time.Now().UTC().Local(), level, "", file, line, msg)
+	_, file, line, _ := runtime.Caller(2)
+	logMsg := fmt.Sprintf("%s | %v | %v | %v:%v | %v\n", time.Now().Format(time.RFC3339), level, "", file, line, msg)
 
 	if fileName != nil {
 
@@ -44,6 +43,9 @@ func (l *Logger) log(level string, msg string, fileName *string) {
 			return
 		}
 		defer f.Close()
+
+		log.SetFlags(log.Flags() &^ (log.Ldate | log.Ltime)) // remove prefix time
+
 		log.SetOutput(f)
 		log.Println(logMsg)
 	}
@@ -64,10 +66,6 @@ func getPath(fileName string) string {
 			panic(err)
 		}
 	}
-	if strings.Contains(runtime.GOOS, "window") {
-		path = path + "\\"
-	} else {
-		path = path + "\\"
-	}
-	return path + fileName + ".log"
+
+	return path + "\\" + fileName + ".log"
 }

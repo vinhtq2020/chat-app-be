@@ -1,13 +1,13 @@
 package domain
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
 )
 
 type RoomService interface {
-	All(c *gin.Context) ([]Room, error)
-	Load(c *gin.Context, id string) (*Room, error)
-	Create(c *gin.Context, room Room) (int64, error)
-	Delete(c *gin.Context, id string) (int64, error)
-	Patch(c *gin.Context, room Room) (int64, error)
+	All(ctx context.Context) ([]Room, error)
+	Load(ctx context.Context, id string) (*Room, error)
+	Create(ctx context.Context, room Room) (int64, error)
+	Delete(ctx context.Context, id string) (int64, error)
+	Patch(ctx context.Context, room Room) (int64, error)
 }

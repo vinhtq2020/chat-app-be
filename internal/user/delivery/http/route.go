@@ -3,11 +3,11 @@ package http
 import (
 	"go-service/internal/user/domain"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
-func NewRoute(r *gin.RouterGroup, handler domain.UserTransport) {
-	r.Handle(http.MethodPost, "/search", handler.Search)
-	r.Handle(http.MethodGet, "/search", handler.Search)
+func NewRoute(router *http.ServeMux, handler domain.UserTransport) {
+	path := "/user"
+
+	router.HandleFunc(path+"/search", handler.Search)
+	router.HandleFunc(http.MethodPost+path+"/search", handler.Search)
 }

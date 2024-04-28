@@ -1,7 +1,7 @@
 package domain
 
-import "github.com/gin-gonic/gin"
+import "context"
 
 type SearchService interface {
-	Search(ctx *gin.Context, filter SearchFilter) (list interface{}, total int64, err error)
+	Search(ctx context.Context, filter SearchFilter) (list interface{}, total int64, err error)
 }

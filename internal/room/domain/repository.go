@@ -1,14 +1,14 @@
 package domain
 
 import (
-	"github.com/gin-gonic/gin"
+	"context"
 )
 
 type RoomRepository interface {
-	Load(ctx *gin.Context, id string) (*Room, error)
-	All(ctx *gin.Context) ([]Room, error)
-	Create(ctx *gin.Context, Room Room) (int64, error)
-	Update(ctx *gin.Context, Room Room)
-	Patch(ctx *gin.Context, Room map[string]interface{}) (int64, error)
-	Delete(ctx *gin.Context, id string) (int64, error)
+	Load(ctx context.Context, id string) (*Room, error)
+	All(ctx context.Context) ([]Room, error)
+	Create(ctx context.Context, Room Room) (int64, error)
+	Update(ctx context.Context, Room Room)
+	Patch(ctx context.Context, Room map[string]interface{}) (int64, error)
+	Delete(ctx context.Context, id string) (int64, error)
 }

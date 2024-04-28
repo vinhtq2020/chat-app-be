@@ -5,14 +5,18 @@ import (
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-func NewPostgresDb() (*gorm.DB, error) {
-	dsn := "host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+func NewPostgresDb(dsn string) (*gorm.DB, error) {
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent), // turn off logger
+	})
 	if err != nil {
 		fmt.Println(err.Error())
 		return nil, err
 	}
+	fmt.Println("Pinged your deployment. You successly connected to Postgres!")
+
 	return db, nil
 }

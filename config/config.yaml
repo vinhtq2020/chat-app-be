@@ -1,1 +1,13 @@
 accessTokenSecretKey: my-secret-key
+mongo:
+  database: autocomplete-search
+  URI: mongodb+srv://quangvinh2015vi:cRG2NHc6F8d9Z9pg@cluster0.po60fij.mongodb.net/?retryWrites=true&w=majority
+
+redis:
+  address: redis-17934.c265.us-east-1-2.ec2.redns.redis-cloud.com:17934
+  password: vYZ3RcYinbb8GZpLrVCSFJ7J2GVr3olV
+  db: 0
+
+postgres:
+  # dsn: host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable
+  dsn: host=ep-raspy-forest-a5bx1vgo.us-east-2.aws.neon.tech user=neondb_owner dbname=neondb password=DSROgTmro3A4 port=5432 sslmode=require

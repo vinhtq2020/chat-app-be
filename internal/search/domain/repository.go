@@ -1,8 +1,10 @@
 package domain
 
-import "github.com/gin-gonic/gin"
+import (
+	"context"
+)
 
 type SearchRepository interface {
-	Search(e *gin.Context, result interface{}, filter SearchFilter) error
-	Total(e *gin.Context) (int64, error)
+	Search(ctx context.Context, result interface{}, filter SearchFilter) error
+	Total(ctx context.Context) (int64, error)
 }

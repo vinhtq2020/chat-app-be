@@ -1,9 +1,8 @@
 package service
 
 import (
+	"context"
 	"go-service/internal/sequence/domain"
-
-	"github.com/gin-gonic/gin"
 )
 
 type SequenceUsecase struct {
@@ -16,10 +15,10 @@ func NewSequenceUsecase(repository domain.SequenceRepository) *SequenceUsecase {
 	}
 }
 
-func (u *SequenceUsecase) Next(c *gin.Context, module string) (int64, error) {
-	res, err := u.repository.Next(c, module)
+func (u *SequenceUsecase) Next(ctx context.Context, module string) (int64, error) {
+	res, err := u.repository.Next(ctx, module)
 	if err != nil || res <= 0 {
 		return res, err
 	}
-	return u.repository.GetSequence(c, module)
+	return u.repository.GetSequence(ctx, module)
 }

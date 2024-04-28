@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func convertObjectToMap(obj interface{}) map[string]interface{} {
+func ConvertObjectToMap(obj interface{}) map[string]interface{} {
 	inrec, _ := json.Marshal(obj)
 	var mapObj map[string]interface{}
 	json.Unmarshal(inrec, &mapObj)
@@ -34,4 +34,12 @@ func ToMapOmitEmpty(obj interface{}) map[string]interface{} {
 		}
 	}
 	return mapRes
+}
+
+func ConvertArrayToInterfaceArray[T any](arr []T) []interface{} {
+	b := make([]interface{}, len(arr))
+	for i := range arr {
+		b[i] = arr[i]
+	}
+	return b
 }

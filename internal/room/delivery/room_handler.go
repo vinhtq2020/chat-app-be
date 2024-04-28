@@ -1,10 +1,11 @@
 package delivery
 
 import (
+	"encoding/json"
 	"go-service/internal/room/domain"
+	"go-service/pkg/response"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
@@ -16,129 +17,131 @@ type RoomHandler struct {
 func NewRoomHandler(service domain.RoomService, upgrader websocket.Upgrader) *RoomHandler {
 	return &RoomHandler{service: service, upgrader: upgrader}
 }
-func (r *RoomHandler) All(c *gin.Context) {
-	room, err := r.service.All(c)
+func (h *RoomHandler) All(w http.ResponseWriter, r *http.Request) {
+	room, err := h.service.All(r.Context())
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	c.JSON(http.StatusOK, room)
+	response.Response(w, http.StatusOK, room)
 }
 
-func reader(c *gin.Context, conn *websocket.Conn) {
+func reader(w http.ResponseWriter, r *http.Request, conn *websocket.Conn) {
 	for {
 		messageType, p, err := conn.ReadMessage()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 
 		if err := conn.WriteMessage(messageType, p); err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 	}
 }
 
-func (r *RoomHandler) ReadAndWriteMessage(c *gin.Context) {
-	r.upgrader.CheckOrigin = func(r *http.Request) bool { return true }
+func (h *RoomHandler) ReadAndWriteMessage(w http.ResponseWriter, r *http.Request) {
+	h.upgrader.CheckOrigin = func(h *http.Request) bool { return true }
 
-	ws, err := r.upgrader.Upgrade(c.Writer, c.Request, nil)
+	ws, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	reader(c, ws)
+	reader(w, r, ws)
 }
 
-func (r *RoomHandler) Load(c *gin.Context) {
+func (h *RoomHandler) Load(w http.ResponseWriter, r *http.Request) {
 	var room *domain.Room
-	id := c.Param("id")
+	id := r.PathValue("id")
 	if len(id) == 0 {
-		c.JSON(http.StatusBadRequest, nil)
+		http.Error(w, "missing required field", http.StatusBadRequest)
 		return
 	}
-	room, err := r.service.Load(c, id)
+	room, err := h.service.Load(r.Context(), id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if room == nil {
-		c.JSON(http.StatusNotFound, 0)
+		http.Error(w, "", http.StatusNotFound)
 		return
 	}
-	c.JSON(http.StatusOK, room)
+	response.Response(w, http.StatusOK, room)
 }
 
-func (h *RoomHandler) Create(c *gin.Context) {
+func (h *RoomHandler) Create(w http.ResponseWriter, r *http.Request) {
 	var room domain.Room
-	err := c.Bind(&room)
+
+	err := json.NewDecoder(r.Body).Decode(&room)
+
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err.Error())
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.service.Create(c, room)
+	res, err := h.service.Create(r.Context(), room)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err.Error())
+		response.Response(w, http.StatusInternalServerError, err.Error())
 		return
 	} else if res == 0 {
-		c.JSON(http.StatusNotFound, 0)
+		response.Response(w, http.StatusNotFound, 0)
 		return
 	} else if res < 0 {
-		c.JSON(http.StatusConflict, -1)
+		response.Response(w, http.StatusConflict, -1)
 		return
 	} else {
-		c.JSON(http.StatusCreated, res)
+		response.Response(w, http.StatusCreated, res)
 	}
 }
 
-func (h *RoomHandler) Delete(c *gin.Context) {
-	id := c.Param("id")
+func (h *RoomHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	id := r.PathValue("id")
 	if len(id) > 0 {
-		res, err := h.service.Delete(c, id)
+		res, err := h.service.Delete(r.Context(), id)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else if res == 0 {
-			c.JSON(http.StatusNotFound, 0)
+			response.Response(w, http.StatusNotFound, 0)
 			return
 		} else if res < 0 {
-			c.JSON(http.StatusConflict, -1)
+			response.Response(w, http.StatusConflict, -1)
 			return
 		} else {
-			c.JSON(http.StatusOK, res)
+			response.Response(w, http.StatusOK, res)
 		}
 	} else {
-		c.JSON(http.StatusBadRequest, "id not found")
+		http.Error(w, "id not found", http.StatusBadRequest)
 	}
 }
 
-func (h *RoomHandler) Patch(c *gin.Context) {
+func (h *RoomHandler) Patch(w http.ResponseWriter, r *http.Request) {
 	var room domain.Room
 
-	id := c.Param("id")
+	id := r.PathValue("id")
 	if len(id) > 0 {
 		room.Id = id
-		err := c.Bind(&room)
+		err := json.NewDecoder(r.Body).Decode(&room)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, err.Error())
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		res, err := h.service.Patch(c, room)
+		res, err := h.service.Patch(r.Context(), room)
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		} else if res == 0 {
-			c.JSON(http.StatusNotFound, 0)
+			response.Response(w, http.StatusNotFound, 0)
 			return
 		} else if res < 0 {
-			c.JSON(http.StatusConflict, -1)
+			response.Response(w, http.StatusConflict, -1)
 			return
 		} else {
-			c.JSON(http.StatusOK, res)
+			response.Response(w, http.StatusOK, res)
 		}
 	}
 

@@ -1,15 +1,15 @@
 package validator
 
 import (
+	"context"
 	"fmt"
 	"go-service/internal/auth/domain"
-	"go-service/pkg/database/sql"
-	"go-service/pkg/database/sql/pq"
+	sql "go-service/pkg/database/postgres"
+	"go-service/pkg/database/postgres/pq"
 	"go-service/pkg/validate"
 	"net/mail"
 	"strings"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -24,7 +24,7 @@ func NewAuthValidator(db *gorm.DB, table string, validate validate.Validate, toA
 	return &AuthValidator{validate: validate, db: db, toArray: toArray, table: table}
 }
 
-func (v *AuthValidator) ValidateLogin(e *gin.Context, email string) ([]validate.ErrorMsg, error) {
+func (v *AuthValidator) ValidateLogin(ctx context.Context, email string) ([]validate.ErrorMsg, error) {
 	errMsgs := []validate.ErrorMsg{}
 	// qr := fmt.Sprintf(`select email from %s u where u.user_name = $1`, v.table)
 	// res := []domain.UserLoginData{}
@@ -43,7 +43,7 @@ func (v *AuthValidator) ValidateLogin(e *gin.Context, email string) ([]validate.
 	return errMsgs, nil
 }
 
-func (v *AuthValidator) ValidateRegister(e *gin.Context, user domain.UserLoginData) ([]validate.ErrorMsg, error) {
+func (v *AuthValidator) ValidateRegister(ctx context.Context, user domain.Account) ([]validate.ErrorMsg, error) {
 	errMsgs := []validate.ErrorMsg{}
 	errs := v.validate.Validate(user)
 	if len(errs) > 0 {
@@ -81,7 +81,7 @@ func (v *AuthValidator) ValidateRegister(e *gin.Context, user domain.UserLoginDa
 	return errMsgs, nil
 }
 
-func (v *AuthValidator) ValidateEmailGoogle(e *gin.Context, email string) ([]validate.ErrorMsg, error) {
+func (v *AuthValidator) ValidateEmailGoogle(ctx context.Context, email string) ([]validate.ErrorMsg, error) {
 	errMsgs := []validate.ErrorMsg{}
 	_, err := mail.ParseAddress(email)
 	if err != nil {

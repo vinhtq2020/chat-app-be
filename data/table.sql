@@ -56,7 +56,7 @@ create table if not exists refresh_tokens(
     device_id varchar(255),
     browser varchar(255),
     ip_address varchar(255),
-    token varchar(255),
+    refresh_token varchar(255),
     expiry int8,
     created_at timestamp,
     updated_at timestamp,

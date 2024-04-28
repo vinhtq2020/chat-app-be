@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	"context"
 	"errors"
 	"go-service/internal/auth/domain"
 	user_info_domain "go-service/internal/user/domain"
@@ -11,44 +12,44 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-const (
-	accessTokenDuration  = time.Minute
-	refreshTokenDuration = time.Hour
-)
-
 type AuthUsecase struct {
-	repository         domain.AuthRepository
-	userInfoRepository user_info_domain.UserRepository
-	Validator          domain.UserLoginDataValidator
-	secretKey          string
+	accountRepository      domain.AccountRepository
+	userRepository         user_info_domain.UserRepository
+	refreshTokenRepository domain.RefreshTokenRepository
+	Validator              domain.AccountValidator
+	secretKey              string
 }
 
-func NewAuthUsecase(repository domain.AuthRepository, Validator domain.UserLoginDataValidator, userInfoRepository user_info_domain.UserRepository, secretKey string,
+func NewAuthService(repository domain.AccountRepository,
+	Validator domain.AccountValidator,
+	userInfoRepository user_info_domain.UserRepository,
+	refreshTokenRepository domain.RefreshTokenRepository,
+	secretKey string,
 ) *AuthUsecase {
 	return &AuthUsecase{
-		repository:         repository,
-		Validator:          Validator,
-		userInfoRepository: userInfoRepository,
-		secretKey:          secretKey,
+		accountRepository:      repository,
+		Validator:              Validator,
+		userRepository:         userInfoRepository,
+		refreshTokenRepository: refreshTokenRepository,
+		secretKey:              secretKey,
 	}
 }
 
 // authen with email, phone or pin send code to authenticate
-func AuthRegister(e *gin.Context) (int64, error) {
+func AuthRegister(ctx context.Context) (int64, error) {
 	panic("")
 }
 
-func (u *AuthUsecase) LoginWithGoogle(e *gin.Context, email string) ([]validate.ErrorMsg, int64, *jwt.TokenData, error) {
-	errMsg, err := u.Validator.ValidateEmailGoogle(e, email)
+func (u *AuthUsecase) LoginWithGoogle(ctx context.Context, email string) ([]validate.ErrorMsg, int64, *jwt.TokenData, error) {
+	errMsg, err := u.Validator.ValidateEmailGoogle(ctx, email)
 	if err != nil || len(errMsg) > 0 {
 		return errMsg, 0, nil, err
 	}
-	res, err := u.repository.GetUserLoginData(e, email)
+	res, err := u.accountRepository.Load(ctx, email)
 	if err != nil {
 		return nil, 0, nil, err
 	}
@@ -56,34 +57,35 @@ func (u *AuthUsecase) LoginWithGoogle(e *gin.Context, email string) ([]validate.
 	if res == nil {
 		id := uuid.Pseudo_uuid()
 		username := strings.Split(email, "@")[0]
-		user := domain.UserLoginData{
+		user := domain.Account{
 			Id:       id,
 			Username: &username,
 			Email:    &email,
 			Provider: model.GoogleProvider(),
 			Status:   model.StatusActive(),
 		}
-		res, err := u.repository.Register(e, user)
+		res, err := u.accountRepository.Insert(ctx, user)
 		if err != nil {
 			return nil, res, nil, err
 		}
 		//
-		token := jwt.GenerateTokens(id, username, u.secretKey, accessTokenDuration, refreshTokenDuration)
+		token := jwt.GenerateTokens(id, u.secretKey, jwt.AccessTokenDuration, jwt.RefreshTokenDuration)
 		return nil, res, &token, err
 	} else {
-		token := jwt.GenerateTokens(res.Id, *res.Username, u.secretKey, accessTokenDuration, refreshTokenDuration)
+		token := jwt.GenerateTokens(res.Id, u.secretKey, jwt.AccessTokenDuration, jwt.RefreshTokenDuration)
 		return nil, 1, &token, err
 	}
 
 }
 
-func (u *AuthUsecase) Login(e *gin.Context, email string, password string, browser string, ipAdress string, deviceId string) ([]validate.ErrorMsg, *jwt.TokenData, error) {
-	errs, err := u.Validator.ValidateLogin(e, email)
+func (u *AuthUsecase) Login(ctx context.Context, email string, password string, browser string, ipAdress string, deviceId string) ([]validate.ErrorMsg, *jwt.TokenData, error) {
+	errs, err := u.Validator.ValidateLogin(ctx, email)
 	if err != nil || len(errs) > 0 {
 		return errs, nil, err
 	}
 
-	exist, err := u.repository.Exist(e, email)
+	// check user
+	exist, err := u.accountRepository.Exist(ctx, email)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -92,7 +94,7 @@ func (u *AuthUsecase) Login(e *gin.Context, email string, password string, brows
 		return nil, nil, nil
 	}
 
-	userInfo, err := u.repository.GetUserLoginData(e, email)
+	userInfo, err := u.accountRepository.Load(ctx, email)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -105,16 +107,26 @@ func (u *AuthUsecase) Login(e *gin.Context, email string, password string, brows
 		return nil, nil, err
 	}
 
-	token := jwt.GenerateTokens(userInfo.Id, *userInfo.Email, u.secretKey, accessTokenDuration, refreshTokenDuration)
+	token := jwt.GenerateTokens(userInfo.Id, u.secretKey, jwt.AccessTokenDuration, jwt.RefreshTokenDuration)
+	_, err = u.refreshTokenRepository.InTransaction(ctx, func(db *gorm.DB) (int64, error) {
+		res, err := u.refreshTokenRepository.Delete(ctx, token.UserId, ipAdress, deviceId, browser)
+		if err != nil {
+			return res, err
+		}
 
-	_, err = u.repository.AddRefreshToken(e, domain.RefreshToken{
-		UserId:    userInfo.Id,
-		Token:     token.RefreshToken,
-		Expiry:    refreshTokenDuration,
-		IPAddress: ipAdress,
-		DeviceId:  deviceId,
-		Browser:   browser,
-		CreatedAt: time.Now(),
+		_, err = u.refreshTokenRepository.Insert(ctx, domain.RefreshToken{
+			UserId:    userInfo.Id,
+			Token:     token.RefreshToken,
+			Expiry:    jwt.RefreshTokenDuration,
+			IPAddress: ipAdress,
+			DeviceId:  deviceId,
+			Browser:   browser,
+			CreatedAt: time.Now(),
+		})
+		if err != nil {
+			return -1, err
+		}
+		return 1, err
 	})
 
 	if err != nil {
@@ -124,8 +136,8 @@ func (u *AuthUsecase) Login(e *gin.Context, email string, password string, brows
 	return nil, &token, nil
 }
 
-func (u *AuthUsecase) Register(e *gin.Context, userLoginData domain.UserLoginData) ([]validate.ErrorMsg, int64, error) {
-	listErr, err := u.Validator.ValidateRegister(e, userLoginData)
+func (u *AuthUsecase) Register(ctx context.Context, userLoginData domain.Account) ([]validate.ErrorMsg, int64, error) {
+	listErr, err := u.Validator.ValidateRegister(ctx, userLoginData)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -147,13 +159,13 @@ func (u *AuthUsecase) Register(e *gin.Context, userLoginData domain.UserLoginDat
 	userLoginData.UpdatedAt = &currentTime
 	userLoginData.Version = 1
 
-	res, err := u.repository.InTransaction(e, func(tx *gorm.DB) (int64, error) {
-		res, err := u.repository.Register(e, userLoginData)
+	res, err := u.accountRepository.InTransaction(ctx, func(tx *gorm.DB) (int64, error) {
+		res, err := u.accountRepository.Insert(ctx, userLoginData)
 		if err != nil {
 			return res, err
 		}
 
-		res, err = u.userInfoRepository.Create(e, user_info_domain.User{
+		res, err = u.userRepository.Create(ctx, user_info_domain.User{
 			Id:       id,
 			UserName: userLoginData.Username,
 			Version:  1,
@@ -168,6 +180,21 @@ func (u *AuthUsecase) Register(e *gin.Context, userLoginData domain.UserLoginDat
 	return nil, res, nil
 }
 
-func (u *AuthUsecase) Logout(e *gin.Context, userId string, browser string, ipAdress string, deviceId string) (int64, error) {
-	return u.repository.RemoveRefreshToken(e, userId, ipAdress, deviceId, browser)
+func (u *AuthUsecase) Logout(ctx context.Context, userId string, browser string, ipAdress string, deviceId string) (int64, error) {
+	return u.refreshTokenRepository.Delete(ctx, userId, ipAdress, deviceId, browser)
+}
+
+func (u *AuthUsecase) RefreshToken(ctx context.Context, userId string, browser string, ipAddress string, deviceId string) (int64, string, error) {
+	oldToken, err := u.refreshTokenRepository.Load(ctx, browser, ipAddress, deviceId)
+	if err != nil || oldToken == nil {
+		return 0, "", err
+	}
+
+	// check is expiry
+	if oldToken.CreatedAt.Add(oldToken.Expiry).Before(time.Now()) {
+		return -2, "", nil
+	}
+
+	newToken, _ := jwt.GenerateAccessToken(userId, u.secretKey, jwt.AccessTokenDuration)
+	return 1, newToken, nil
 }

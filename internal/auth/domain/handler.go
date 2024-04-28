@@ -1,9 +1,12 @@
 package domain
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+)
 
 type AuthTransport interface {
-	Register(e *gin.Context)
-	Login(e *gin.Context)
-	Logout(e *gin.Context)
+	Register(w http.ResponseWriter, r *http.Request)
+	Login(w http.ResponseWriter, r *http.Request)
+	Logout(w http.ResponseWriter, r *http.Request)
+	RefreshToken(w http.ResponseWriter, r *http.Request)
 }

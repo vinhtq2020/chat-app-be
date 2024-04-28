@@ -1,11 +1,11 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"go-service/internal/sequence/domain"
-	"go-service/pkg/database/sql"
+	sql "go-service/pkg/database/postgres"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -46,7 +46,7 @@ func NewSequenceRepository(db *gorm.DB, table string, options ...interface{}) *S
 	}
 }
 
-func (r *SequenceRepository) Next(c *gin.Context, module string) (int64, error) {
+func (r *SequenceRepository) Next(ctx context.Context, module string) (int64, error) {
 	qr := fmt.Sprintf(
 		"insert into %s as s values(%s, 1) on conflict(%s) do update set %s = s.%s + 1 where s.%s = %s",
 		r.table, r.buildParams(1), r.nameCol, r.sequenceCol, r.sequenceCol, r.nameCol, r.buildParams(1))
@@ -54,7 +54,7 @@ func (r *SequenceRepository) Next(c *gin.Context, module string) (int64, error) 
 	return sql.Exec(r.db, qr, module)
 }
 
-func (r *SequenceRepository) GetSequence(c *gin.Context, module string) (int64, error) {
+func (r *SequenceRepository) GetSequence(ctx context.Context, module string) (int64, error) {
 	var sequence domain.Sequence
 	qr := fmt.Sprintf("select * from %s where name = %s", r.table, r.buildParams(1))
 	err := sql.Query(r.db, qr, &sequence, module)

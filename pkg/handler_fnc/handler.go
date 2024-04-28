@@ -1,31 +1,88 @@
 package handler_fnc
 
 import (
+	"context"
+	"fmt"
+	"go-service/pkg/jwt"
+	"go-service/pkg/logger"
+	"go-service/pkg/response"
+	"log"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
+	"net/http/httptest"
+	"net/http/httputil"
 )
 
-func HandleWithSecurity(r *gin.RouterGroup, httpMethod string, relativePath string, security bool, handlers ...gin.HandlerFunc) {
-	handlerFncs := []gin.HandlerFunc{}
-	for _, hf := range handlers {
+func HandleWithSecurity(ctx context.Context, router *http.ServeMux, routerGroup string, httpMethod string, relativePath string, refreshToken http.HandlerFunc, logger *logger.Logger, security bool, handlerFunc func(http.ResponseWriter, *http.Request)) {
+	handlerFnc := func(w http.ResponseWriter, r *http.Request) {
 		if security {
-			handlerFnc := func(e *gin.Context) {
-				accessToken := e.Request.Header.Get("Access-Token")
-				refreshToken := e.Request.Header.Get("Refresh-Token")
-				userId := e.Request.Header.Get("UserId")
-				if len(refreshToken) > 0 && len(accessToken) > 0 && len(userId) > 0 {
-					e.JSON(http.StatusUnauthorized, nil)
-					return
-				}
-				hf(e)
+			// error always return http.ErrNoCookie if not found cookie
+			c, err := r.Cookie("accessToken")
+			if err != nil {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
 			}
 
-			handlerFncs = append(handlerFncs, handlerFnc)
-		} else {
-			handlerFncs = append(handlerFncs, hf)
-		}
-	}
+			_, err = r.Cookie("userId")
+			if err != nil {
+				logger.LogError(err.Error(), nil)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
 
-	r.Handle(httpMethod, relativePath, handlerFncs...)
+			accessToken := c.Value
+			// validate access token & refresh token & user id
+			secretKey := ctx.Value("secretKey").(string)
+			if len(secretKey) == 0 {
+				logger.LogError("invalid secret key", nil)
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+			res, err := jwt.VerifyAccessToken(accessToken, secretKey)
+			if err != nil {
+				logger.LogError(err.Error(), nil)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			} else if res == 0 {
+				http.Error(w, "Not Found", http.StatusNotFound)
+			} else if res == -1 {
+				response.Response(w, http.StatusInternalServerError, nil)
+			} else if res == -2 {
+				response.Response(w, http.StatusUnauthorized, nil)
+			}
+
+			// // get refresh token is expired or not, if not, generate new access token
+			// recoder := httptest.NewRecorder()
+			// refreshToken(recoder, r)
+			// // check refreshToken is done
+			// if recoder.Code != 0 {
+			// 	return
+			// }
+
+		}
+		handlerFunc(w, r)
+
+	}
+	router.HandleFunc(httpMethod+" "+routerGroup+relativePath, handlerFnc)
+}
+
+func LogRequestHandler(h http.Handler, logger *logger.Logger) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		x, err := httputil.DumpRequest(r, true)
+		if err != nil {
+			logger.LogError(err.Error(), nil)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		log.Println(fmt.Sprintf("%q", x))
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, r)
+		log.Println(fmt.Sprintf("%q", rec.Body))
+		for k, v := range rec.HeaderMap {
+			w.Header()[k] = v
+		}
+		w.WriteHeader(rec.Code)
+		rec.Body.WriteTo(w)
+	}
+	return http.HandlerFunc(fn)
 }

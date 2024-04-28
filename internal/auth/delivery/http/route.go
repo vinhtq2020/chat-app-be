@@ -1,15 +1,16 @@
 package http
 
 import (
+	"context"
 	"go-service/internal/auth/domain"
 	"go-service/pkg/handler_fnc"
+	"go-service/pkg/logger"
 	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
-func NewRoute(r *gin.RouterGroup, handler domain.AuthTransport) {
-	r.Handle(http.MethodPost, "/register", handler.Register)
-	handler_fnc.HandleWithSecurity(r, http.MethodPost, "/login", true, handler.Login)
-	handler_fnc.HandleWithSecurity(r, http.MethodPost, "/logout", true, handler.Logout)
+func NewRoute(ctx context.Context, router *http.ServeMux, handler domain.AuthTransport, logger *logger.Logger) {
+	path := "/auth"
+	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/register", handler.RefreshToken, logger, false, handler.Register)
+	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/login", handler.RefreshToken, logger, false, handler.Login)
+	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/logout", handler.RefreshToken, logger, true, handler.Logout)
 }

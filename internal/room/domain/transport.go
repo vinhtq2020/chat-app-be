@@ -1,11 +1,13 @@
 package domain
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
+)
 
 type RoomTransport interface {
-	All(c *gin.Context)
-	Load(c *gin.Context)
-	Create(c *gin.Context)
-	Patch(c *gin.Context)
-	Delete(c *gin.Context)
+	All(w http.ResponseWriter, r *http.Request)
+	Load(w http.ResponseWriter, r *http.Request)
+	Create(w http.ResponseWriter, r *http.Request)
+	Patch(w http.ResponseWriter, r *http.Request)
+	Delete(w http.ResponseWriter, r *http.Request)
 }

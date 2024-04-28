@@ -1,12 +1,12 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"go-service/internal/search/domain"
-	"go-service/pkg/database/sql"
-	"go-service/pkg/database/sql/pq"
+	sql "go-service/pkg/database/postgres"
+	"go-service/pkg/database/postgres/pq"
 
-	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -20,13 +20,13 @@ func NewSearchRepository(table string, db *gorm.DB, toArray pq.Array) *SearchRep
 	return &SearchRepository{table: table, db: db, toArray: toArray}
 }
 
-func (f *SearchRepository) Search(e *gin.Context, result interface{}, filter domain.SearchFilter) error {
+func (f *SearchRepository) Search(ctx context.Context, result interface{}, filter domain.SearchFilter) error {
 	qr := f.buildFilter(filter)
 	err := sql.QueryWithArray(f.db, result, qr, f.toArray)
 	return err
 }
 
-func (f *SearchRepository) Total(e *gin.Context) (int64, error) {
+func (f *SearchRepository) Total(ctx context.Context) (int64, error) {
 	total := int64(0)
 	qr := fmt.Sprintf("select count(*) from %s", f.table)
 	err := sql.Query(f.db, qr, &total)

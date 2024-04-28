@@ -3,7 +3,7 @@ package service
 import (
 	"go-service/internal/search/domain"
 
-	"github.com/gin-gonic/gin"
+	"golang.org/x/net/context"
 )
 
 type SearchService[T any] struct {
@@ -16,14 +16,14 @@ func NewSearchService[T any](repo domain.SearchRepository) *SearchService[T] {
 	}
 }
 
-func (f *SearchService[T]) Search(e *gin.Context, filter domain.SearchFilter) (interface{}, int64, error) {
+func (f *SearchService[T]) Search(ctx context.Context, filter domain.SearchFilter) (interface{}, int64, error) {
 	list := []T{}
 
-	err := f.repo.Search(e, &list, filter)
+	err := f.repo.Search(ctx, &list, filter)
 	if err != nil {
 		return nil, 0, err
 	}
-	total, err := f.repo.Total(e)
+	total, err := f.repo.Total(ctx)
 	if err != nil {
 		return nil, 0, err
 	}

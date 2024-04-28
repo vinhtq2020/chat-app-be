@@ -1,9 +1,7 @@
 package domain
 
-import (
-	"github.com/gin-gonic/gin"
-)
+import "context"
 
 type UserRepository interface {
-	Create(e *gin.Context, user User) (int64, error)
+	Create(ctx context.Context, user User) (int64, error)
 }

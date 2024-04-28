@@ -7,7 +7,7 @@ import (
 	"go-service/internal/user/domain"
 	"go-service/internal/user/repository"
 	"go-service/internal/user/usecase"
-	"go-service/pkg/database/sql/pq"
+	"go-service/pkg/database/postgres/pq"
 
 	"gorm.io/gorm"
 )
