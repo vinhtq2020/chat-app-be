@@ -12,7 +12,7 @@ import (
 	"net/http/httputil"
 )
 
-func HandleWithSecurity(ctx context.Context, router *http.ServeMux, routerGroup string, httpMethod string, relativePath string, refreshToken http.HandlerFunc, logger *logger.Logger, security bool, handlerFunc func(http.ResponseWriter, *http.Request)) {
+func HandleWithSecurity(ctx context.Context, router *http.ServeMux, routerGroup string, httpMethod string, relativePath string, logger *logger.Logger, security bool, handlerFunc func(http.ResponseWriter, *http.Request)) {
 	handlerFnc := func(w http.ResponseWriter, r *http.Request) {
 		if security {
 			// error always return http.ErrNoCookie if not found cookie

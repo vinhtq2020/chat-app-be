@@ -144,7 +144,7 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	userAgent := r.UserAgent()
 	deviceId := r.Header.Get("Device-ID")
 	ipAddress := r.Header.Get("X-Forwarded-For")
-	userId, err := r.Cookie("user_id")
+	userId, err := r.Cookie("userId")
 	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -169,5 +169,5 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   true,
 	})
-	// response.Response(w, http.StatusCreated)
+	response.Response(w, http.StatusOK, nil)
 }

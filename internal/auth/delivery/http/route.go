@@ -10,7 +10,8 @@ import (
 
 func NewRoute(ctx context.Context, router *http.ServeMux, handler domain.AuthTransport, logger *logger.Logger) {
 	path := "/auth"
-	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/register", handler.RefreshToken, logger, false, handler.Register)
-	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/login", handler.RefreshToken, logger, false, handler.Login)
-	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/logout", handler.RefreshToken, logger, true, handler.Logout)
+	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/register", logger, false, handler.Register)
+	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodPost, "/login", logger, false, handler.Login)
+	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodGet, "/logout", logger, true, handler.Logout)
+	handler_fnc.HandleWithSecurity(ctx, router, path, http.MethodGet, "/refresh", logger, false, handler.RefreshToken)
 }
