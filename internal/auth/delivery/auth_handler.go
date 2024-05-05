@@ -115,7 +115,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
-	userId := r.Header["User-Id"][0]
+	// userId already check in step security
+	userId := r.Context().Value("userId").(string)
+
 	userAgent := r.UserAgent()
 	deviceId := r.Header[http.CanonicalHeaderKey("Device-ID")][0]
 	ipAddress := r.Header.Get("X-Forwarded-For")

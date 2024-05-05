@@ -141,7 +141,7 @@ func VerifyAccessToken(accessToken string, secretKey string) (int64, error) {
 
 	// check os expires
 	if payload.Expiration < time.Now().Unix() {
-		return -2, nil
+		return -3, nil
 	}
 	return 1, nil
 }

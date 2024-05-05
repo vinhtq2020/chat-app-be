@@ -22,13 +22,14 @@ func HandleWithSecurity(ctx context.Context, router *http.ServeMux, routerGroup 
 				return
 			}
 
-			_, err = r.Cookie("userId")
+			userId, err := r.Cookie("userId")
 			if err != nil {
 				logger.LogError(err.Error(), nil)
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-
+			rctx := context.WithValue(r.Context(), "userId", userId.Value)
+			r = r.WithContext(rctx)
 			accessToken := c.Value
 			// validate access token & refresh token & user id
 			secretKey := ctx.Value("secretKey").(string)
@@ -48,7 +49,10 @@ func HandleWithSecurity(ctx context.Context, router *http.ServeMux, routerGroup 
 			} else if res == -1 {
 				response.Response(w, http.StatusInternalServerError, nil)
 			} else if res == -2 {
-				response.Response(w, http.StatusUnauthorized, nil)
+				response.Response(w, http.StatusUnauthorized, "Unauthorized")
+			} else if res == -3 {
+				response.Response(w, http.StatusUnauthorized, "token is expired")
+
 			}
 
 			// // get refresh token is expired or not, if not, generate new access token
