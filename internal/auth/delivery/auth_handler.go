@@ -50,17 +50,25 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		} else if token == nil {
 			http.Error(w, "email is not existed", http.StatusNotFound)
 		} else {
-			expiresAt := time.Now().Add(jwt.AccessTokenDuration)
+			accessTokenExpiresAt := time.Now().Add(jwt.AccessTokenDuration)
+			refreshTokenExpiresAt := time.Now().Add(jwt.RefreshTokenDuration)
 			http.SetCookie(w, &http.Cookie{
 				Name:     "accessToken",
 				Value:    token.AccessToken,
-				Expires:  expiresAt,
+				Expires:  accessTokenExpiresAt,
 				Secure:   true,
 				HttpOnly: true,
 			})
 			http.SetCookie(w, &http.Cookie{
 				Name:     "userId",
 				Value:    token.UserId,
+				Secure:   true,
+				HttpOnly: true,
+			})
+			http.SetCookie(w, &http.Cookie{
+				Name:     "refreshToken",
+				Value:    token.RefreshToken,
+				Expires:  refreshTokenExpiresAt,
 				Secure:   true,
 				HttpOnly: true,
 			})
