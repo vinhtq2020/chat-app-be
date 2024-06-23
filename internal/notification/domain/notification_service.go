@@ -1,3 +1,7 @@
 package domain
 
-type StorageService interface{}
+import "context"
+
+type NotificationService interface {
+	Notify(ctx context.Context, generateId func() string, userId string, content string, subscribersId []string) (int64, error)
+}
