@@ -63,3 +63,11 @@ create table if not exists refresh_tokens(
     primary key(user_id, ip_address, browser, device_id)
 );
 
+create table if not exists notifications{
+    id varchar(255),
+    requestor_id varchar(255),
+    subscribers string[],
+    is_read boolean,
+    content string,
+    primary key(id) 
+}
