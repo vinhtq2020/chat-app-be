@@ -116,7 +116,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	} else if res == 0 {
 		http.Error(w, "Not Found", http.StatusNotFound)
 	} else if res == -1 {
-		response.Response(w, http.StatusInternalServerError, nil)
+		response.Response(w, http.StatusConflict, nil)
 	} else if res == -2 {
 		response.Response(w, http.StatusUnauthorized, nil)
 	}
@@ -144,7 +144,7 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	} else if res == 0 {
 		http.Error(w, "Not Found", http.StatusNotFound)
 	} else if res == -1 {
-		response.Response(w, http.StatusInternalServerError, nil)
+		response.Response(w, http.StatusConflict, nil)
 	} else if res == -2 {
 		response.Response(w, http.StatusUnauthorized, nil)
 	}
@@ -167,11 +167,10 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	} else if res == 0 {
 		http.Error(w, "Not Found", http.StatusNotFound)
 	} else if res == -1 {
-		response.Response(w, http.StatusInternalServerError, nil)
+		response.Response(w, http.StatusConflict, nil)
 	} else if res == -2 {
 		response.Response(w, http.StatusUnauthorized, nil)
 	}
-
 	http.SetCookie(w, &http.Cookie{
 		Name:     "accessToken",
 		Value:    newToken,

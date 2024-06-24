@@ -3,54 +3,79 @@ package delivery
 import (
 	"encoding/json"
 	"go-service/internal/room/domain"
+	"go-service/pkg/logger"
 	"go-service/pkg/response"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
+const GROUP_LIMIT = 100
+
 type RoomHandler struct {
-	service  domain.RoomService
-	upgrader websocket.Upgrader
+	service   domain.RoomService
+	upgrader  websocket.Upgrader
+	clients   map[*websocket.Conn]bool
+	limit     int8
+	broadcast chan domain.Message
+	logger    *logger.Logger
 }
 
-func NewRoomHandler(service domain.RoomService, upgrader websocket.Upgrader) *RoomHandler {
-	return &RoomHandler{service: service, upgrader: upgrader}
+func NewRoomHandler(service domain.RoomService, upgrader websocket.Upgrader, logger *logger.Logger) *RoomHandler {
+	broadcast := make(chan domain.Message)
+	return &RoomHandler{service: service, upgrader: upgrader, limit: GROUP_LIMIT, broadcast: broadcast, logger: logger}
 }
 func (h *RoomHandler) All(w http.ResponseWriter, r *http.Request) {
 	room, err := h.service.All(r.Context())
 	if err != nil {
+		h.logger.LogError(err.Error(), nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	response.Response(w, http.StatusOK, room)
 }
 
-func reader(w http.ResponseWriter, r *http.Request, conn *websocket.Conn) {
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-}
-
-func (h *RoomHandler) ReadAndWriteMessage(w http.ResponseWriter, r *http.Request) {
-	h.upgrader.CheckOrigin = func(h *http.Request) bool { return true }
-
+func (h *RoomHandler) HandleConnections(w http.ResponseWriter, r *http.Request) {
+	// handle connection
 	ws, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
+		h.logger.LogError(err.Error(), nil)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	reader(w, r, ws)
+	defer ws.Close()
+
+	h.clients[ws] = true
+
+	for {
+		var msg domain.Message
+		err = ws.ReadJSON(&msg)
+		if err != nil {
+			h.logger.LogError(err.Error(), nil)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			delete(h.clients, ws)
+			break
+		}
+
+		h.broadcast <- msg
+	}
+
+}
+
+func (h *RoomHandler) HandleMessages() {
+	for {
+		msg := <-h.broadcast
+
+		for client := range h.clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
+				h.logger.LogError(err.Error(), nil)
+				client.Close()
+				delete(h.clients, client)
+			}
+		}
+	}
 }
 
 func (h *RoomHandler) Load(w http.ResponseWriter, r *http.Request) {

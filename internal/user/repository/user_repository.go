@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-service/internal/user/domain"
 	sql "go-service/pkg/database/postgres"
+	"go-service/pkg/logger"
 	"reflect"
 
 	"gorm.io/gorm"
@@ -13,10 +14,11 @@ import (
 type UserRepository struct {
 	db        *gorm.DB
 	table     string
+	logger    *logger.Logger
 	modelType reflect.Type
 }
 
-func NewUserRepository(db *gorm.DB, table string) *UserRepository {
+func NewUserRepository(db *gorm.DB, table string, logger *logger.Logger) *UserRepository {
 	modelType := reflect.TypeOf(domain.User{})
 	return &UserRepository{db: db, modelType: modelType, table: table}
 }
@@ -40,4 +42,17 @@ func (r *UserRepository) Create(ctx context.Context, user domain.User) (int64, e
 	}
 	res, err := sql.Exec(r.db, qr, params...)
 	return res, err
+}
+
+func (r *UserRepository) Exist(ctx context.Context, id string) (bool, error) {
+	qr := "select count(*) from %s where id = %s"
+	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
+	res := int64(0)
+	err := sql.Query(r.db, stmt, &res, id)
+	if err != nil {
+		r.logger.LogError(err.Error(), nil)
+		return false, err
+	}
+
+	return res > 0, nil
 }

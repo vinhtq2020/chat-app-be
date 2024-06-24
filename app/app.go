@@ -71,13 +71,13 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	sequenceService := sequence.NewSequenceService(db)
 
 	auth := auth.NewAuthTransport(db, validate, logger, configs.AccessTokenSecretKey, toArray)
-	room := room.NewRoomTransport(db, sequenceService.Next, upgrader, toArray)
+	room := room.NewRoomTransport(db, sequenceService.Next, upgrader, logger, toArray)
 	user := user.NewUserTransport(db, toArray)
 	querySearch := querysearch.NewQuerySearch(logger, rdb)
 
 	aggregatorService := aggregator.NewAggregatorService(mongoDB, "querySearch", logger)
 	workerService := worker.NewWorkerService(mongoDB, logger)
-	scheduler, err := cron.NewSchedule(1 * time.Minute)
+	scheduler, err := cron.NewSchedule(24 * 7 * time.Hour)
 	if err != nil {
 		return nil, err
 	}
@@ -121,6 +121,9 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 		logger.LogInfo("aggregated autocomplete trie success", nil)
 	}))
 	go logCron.Start()
+
+	// start listensing for incoming chat message
+	go room.HandleMessages()
 
 	return &App{
 		Auth:        auth,

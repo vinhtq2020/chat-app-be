@@ -12,4 +12,5 @@ func NewRoute(r *http.ServeMux, handler domain.RoomTransport) {
 	r.HandleFunc(http.MethodPost+" "+path, handler.Create)
 	r.HandleFunc(http.MethodPatch+" "+path+"/{id}", handler.Patch)
 	r.HandleFunc(http.MethodDelete+" "+path+"/{id}", handler.Delete)
+	r.HandleFunc(http.MethodPost+" "+"/ws", handler.HandleConnections)
 }

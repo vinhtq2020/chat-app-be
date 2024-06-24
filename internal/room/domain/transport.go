@@ -10,4 +10,6 @@ type RoomTransport interface {
 	Create(w http.ResponseWriter, r *http.Request)
 	Patch(w http.ResponseWriter, r *http.Request)
 	Delete(w http.ResponseWriter, r *http.Request)
+	HandleConnections(w http.ResponseWriter, r *http.Request)
+	HandleMessages()
 }

@@ -15,3 +15,9 @@ type Room struct {
 	CreatedAt *time.Time    `json:"createdAt,omitempty" gorm:"column:created_at"`
 	CreatedBy *string       `json:"createdBy,omitempty" gorm:"column:created_by"`
 }
+
+type Message struct {
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Message  string `json:"message"`
+}
