@@ -66,8 +66,10 @@ create table if not exists refresh_tokens(
 create table if not exists notifications{
     id varchar(255),
     requestor_id varchar(255),
-    subscribers string[],
+    subscribers jsonb[],
     is_read boolean,
     content string,
+    created_at timestamp,
+    updated_at timestamp,
     primary key(id) 
 }

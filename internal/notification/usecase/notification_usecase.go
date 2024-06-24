@@ -17,19 +17,26 @@ func NewNotificationService(storageRepository domain.NotificationStorageReposito
 }
 
 func (n *notificationService) Notify(ctx context.Context, generateId func() string, requestorId string, content string, subscriberIds []string) (int64, error) {
+	var subscribers []domain.Subscriber
+	for _, v := range subscriberIds {
+		subscribers = append(subscribers, domain.Subscriber{
+			SubscriberId: v,
+			IsRead:       false,
+		})
+
+	}
+
 	res, err := n.storageRepository.Insert(ctx, domain.Notification{
 		Id:          generateId(),
 		RequestorId: requestorId,
-		Subscribers: subscriberIds,
-		CreatedAt:   time.Time{},
-		UpdatedAt:   time.Time{},
+		Subscribers: subscribers,
+		CreatedAt:   time.Now(),
+		UpdatedAt:   time.Now(),
 		Content:     content,
 	})
+
 	if err != nil {
 		return res, err
 	}
 
-	for _, v := range subscriberIds {
-
-	}
 }

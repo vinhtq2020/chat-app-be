@@ -18,6 +18,7 @@ import (
 	"go-service/pkg/database/postgres"
 	"go-service/pkg/logger"
 	"go-service/pkg/validate"
+	ws "go-service/pkg/ws/chat"
 	"reflect"
 	"strings"
 	"time"
@@ -40,6 +41,7 @@ type App struct {
 	User        user_domain.UserTransport
 	Room        room_domain.RoomTransport
 	QuerySearch query_search_domain.QuerySearchTransport
+	ChatHub ws.Hub
 }
 
 func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, configs configs.Config, logger *logger.Logger) (*App, error) {
@@ -122,10 +124,14 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	}))
 	go logCron.Start()
 
+	hub := ws.NewHub()
+	go hub.Run()
+
 	return &App{
 		Auth:        auth,
 		User:        user,
 		Room:        room,
 		QuerySearch: querySearch,
+		hub:
 	}, nil
 }

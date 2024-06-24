@@ -26,32 +26,32 @@ func (h *RoomHandler) All(w http.ResponseWriter, r *http.Request) {
 	response.Response(w, http.StatusOK, room)
 }
 
-func reader(w http.ResponseWriter, r *http.Request, conn *websocket.Conn) {
-	for {
-		messageType, p, err := conn.ReadMessage()
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
+// func reader(w http.ResponseWriter, r *http.Request, conn *websocket.Conn) {
+// 	for {
+// 		messageType, p, err := conn.ReadMessage()
+// 		if err != nil {
+// 			http.Error(w, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
 
-		if err := conn.WriteMessage(messageType, p); err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-}
+// 		if err := conn.WriteMessage(messageType, p); err != nil {
+// 			http.Error(w, err.Error(), http.StatusInternalServerError)
+// 			return
+// 		}
+// 	}
+// }
 
-func (h *RoomHandler) ReadAndWriteMessage(w http.ResponseWriter, r *http.Request) {
-	h.upgrader.CheckOrigin = func(h *http.Request) bool { return true }
+// func (h *RoomHandler) ReadAndWriteMessage(w http.ResponseWriter, r *http.Request) {
+// 	h.upgrader.CheckOrigin = func(h *http.Request) bool { return true }
 
-	ws, err := h.upgrader.Upgrade(w, r, nil)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+// 	ws, err := h.upgrader.Upgrade(w, r, nil)
+// 	if err != nil {
+// 		http.Error(w, err.Error(), http.StatusInternalServerError)
+// 		return
+// 	}
 
-	reader(w, r, ws)
-}
+// 	reader(w, r, ws)
+// }
 
 func (h *RoomHandler) Load(w http.ResponseWriter, r *http.Request) {
 	var room *domain.Room
