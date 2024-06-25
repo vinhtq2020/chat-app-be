@@ -46,8 +46,8 @@ func (u *FriendUsecase) SendFriendRequest(ctx context.Context, userId string, fr
 }
 
 func (u *FriendUsecase) Patch(ctx context.Context, friendId string, status domain.FriendRequestStatus) (int64, error) {
-
+	panic("")
 }
 func (u *FriendUsecase) Delete(ctx context.Context, friendId string) (int64, error) {
-
+	panic("")
 }

@@ -41,7 +41,7 @@ type App struct {
 	User        user_domain.UserTransport
 	Room        room_domain.RoomTransport
 	QuerySearch query_search_domain.QuerySearchTransport
-	ChatHub ws.Hub
+	ChatHub     *ws.Hub
 }
 
 func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, configs configs.Config, logger *logger.Logger) (*App, error) {
@@ -135,6 +135,6 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 		User:        user,
 		Room:        room,
 		QuerySearch: querySearch,
-		hub:
+		ChatHub:     hub,
 	}, nil
 }

@@ -74,12 +74,16 @@ func Exec(db *gorm.DB, sql string, value ...interface{}) (int64, error) {
 	return tx.RowsAffected, tx.Error
 }
 
-func buildParams(n int, buildParam func(int) string) []string {
+func buildParams(n int, buildParam func(int64) string) []string {
 	params := []string{}
-	for i := 1; i <= n; i++ {
+	for int(64) := 1; i <= n; i++ {
 		params = append(params, buildParam(i))
 	}
 	return params
+}
+
+func BuildParam(n int) string {
+	return fmt.Sprintf("$%d", n)
 }
 
 func GetPrimaryKeys(modelType reflect.Type) (keys []string) {

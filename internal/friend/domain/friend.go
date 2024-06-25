@@ -25,10 +25,10 @@ type FriendRequest struct {
 
 type FriendRequestStatus string
 
-var statusAccept FriendRequestStatus = "A"
-var statusReject FriendRequestStatus = "R"
-var statusCancel FriendRequestStatus = "C"
-var statusPending FriendRequestStatus = "P"
+var StatusAccept FriendRequestStatus = "A"
+var StatusReject FriendRequestStatus = "R"
+var StatusCancel FriendRequestStatus = "C"
+var StatusPending FriendRequestStatus = "P"
 
 func (u FriendRequestStatus) Value() string {
 	return fmt.Sprintf("%v", u)

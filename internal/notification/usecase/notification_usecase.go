@@ -38,5 +38,5 @@ func (n *notificationService) Notify(ctx context.Context, generateId func() stri
 	if err != nil {
 		return res, err
 	}
-
+	panic("")
 }
