@@ -26,16 +26,16 @@ func NewAuthHandler(authService domain.AuthService, logger *logger.Logger) *Auth
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var userLoginData domain.Account
 	err := json.NewDecoder(r.Body).Decode(&userLoginData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 	userAgent := r.UserAgent()
 	deviceId := r.Header.Get("Device-ID")
 	ipAddress := r.Header.Get("X-Forwarded-For")
 
 	browser, _ := useragent.GetDeviceInfo(userAgent)
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
 	if len(deviceId) == 0 || len(browser) == 0 || len(ipAddress) == 0 {
 		http.Error(w, "missing required Header", http.StatusBadRequest)
 		return

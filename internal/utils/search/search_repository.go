@@ -1,32 +1,31 @@
-package repository
+package search
 
 import (
 	"context"
 	"fmt"
-	"go-service/internal/search/domain"
 	sql "go-service/pkg/database/postgres"
 	"go-service/pkg/database/postgres/pq"
 
 	"gorm.io/gorm"
 )
 
-type SearchRepository struct {
+type searchRepository struct {
 	table   string
 	db      *gorm.DB
 	toArray pq.Array
 }
 
-func NewSearchRepository(table string, db *gorm.DB, toArray pq.Array) *SearchRepository {
-	return &SearchRepository{table: table, db: db, toArray: toArray}
+func NewSearchRepository(table string, db *gorm.DB, toArray pq.Array) *searchRepository {
+	return &searchRepository{table: table, db: db, toArray: toArray}
 }
 
-func (f *SearchRepository) Search(ctx context.Context, result interface{}, filter domain.SearchFilter) error {
-	qr := f.buildFilter(filter)
+func (f *searchRepository) Search(ctx context.Context, result interface{}, filter SearchFilter) error {
+	qr := BuildQuery(f.table, filter)
 	err := sql.QueryWithArray(f.db, result, qr, f.toArray)
 	return err
 }
 
-func (f *SearchRepository) Total(ctx context.Context) (int64, error) {
+func (f *searchRepository) Total(ctx context.Context) (int64, error) {
 	total := int64(0)
 	qr := fmt.Sprintf("select count(*) from %s", f.table)
 	err := sql.Query(f.db, qr, &total)
@@ -36,8 +35,13 @@ func (f *SearchRepository) Total(ctx context.Context) (int64, error) {
 	return total, nil
 }
 
-func (f *SearchRepository) buildFilter(filter domain.SearchFilter) string {
-	selectClause := fmt.Sprintf("select * from %s ", f.table)
+func BuildQuery(table string, filter SearchFilter) string {
+	selectClause := fmt.Sprintf("select * from %s ", table)
+	filterClause := BuildFilter(filter)
+	return selectClause + filterClause
+}
+
+func BuildFilter(filter SearchFilter) string {
 	whereClause := "where"
 	orderByClause := ""
 	limitClause := ""
@@ -64,5 +68,5 @@ func (f *SearchRepository) buildFilter(filter domain.SearchFilter) string {
 		offset := *filter.Page * *filter.Limit
 		limitClause = fmt.Sprintf("LIMIT %v OFFSET %v ", filter.Limit, offset)
 	}
-	return selectClause + orderByClause + limitClause
+	return orderByClause + limitClause
 }

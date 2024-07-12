@@ -2,8 +2,8 @@ package delivery
 
 import (
 	"encoding/json"
-	domain_search "go-service/internal/search/domain"
 	"go-service/internal/user/domain"
+	"go-service/internal/utils/search"
 	"go-service/pkg/convert"
 	"go-service/pkg/model"
 	"net/http"
@@ -11,10 +11,10 @@ import (
 
 type UserHandler struct {
 	service       domain.UserService
-	searchService domain_search.SearchService
+	searchService search.SearchService
 }
 
-func NewUserHandler(service domain.UserService, searchService domain_search.SearchService) *UserHandler {
+func NewUserHandler(service domain.UserService, searchService search.SearchService) *UserHandler {
 	return &UserHandler{
 		service:       service,
 		searchService: searchService,
@@ -22,7 +22,7 @@ func NewUserHandler(service domain.UserService, searchService domain_search.Sear
 }
 
 func (u *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
-	var filter domain_search.SearchFilter
+	var filter search.SearchFilter
 
 	if r.Method == http.MethodGet {
 		queryParams := r.URL.Query()

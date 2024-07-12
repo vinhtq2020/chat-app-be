@@ -6,5 +6,5 @@ import (
 )
 
 func NewRoute(router *http.ServeMux, handler domain.QuerySearchTransport) {
-	router.HandleFunc(http.MethodGet+" "+"/search", handler.Search)
+	router.HandleFunc(http.MethodGet+" "+"/query_search", handler.Search)
 }

@@ -11,6 +11,7 @@ import (
 	"go-service/internal/configs"
 	"go-service/internal/room"
 	room_domain "go-service/internal/room/domain"
+	"go-service/internal/search_tool"
 	"go-service/internal/sequence"
 	"go-service/internal/user"
 	user_domain "go-service/internal/user/domain"
@@ -41,6 +42,7 @@ type App struct {
 	User        user_domain.UserTransport
 	Room        room_domain.RoomTransport
 	QuerySearch query_search_domain.QuerySearchTransport
+	SearchTool  search_tool.SearchToolTransport
 	ChatHub     *ws.Hub
 }
 
@@ -74,7 +76,7 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 
 	auth := auth.NewAuthTransport(db, validate, logger, configs.AccessTokenSecretKey, toArray)
 	room := room.NewRoomTransport(db, sequenceService.Next, upgrader, logger, toArray)
-	user := user.NewUserTransport(db, toArray)
+	user := user.NewUserTransport(db, logger, toArray)
 	querySearch := querysearch.NewQuerySearch(logger, rdb)
 
 	aggregatorService := aggregator.NewAggregatorService(mongoDB, "querySearch", logger)
@@ -86,7 +88,7 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 
 	logCron := cron.NewCron()
 	logCron.AddJob(scheduler, cron.JobFunc(func() {
-		res, err := aggregatorService.AggregatedData(context.Background())
+		res, err := aggregatorService.AggregatedData(ctx)
 		if err != nil {
 			logger.LogError(err.Error(), nil)
 			return
@@ -97,13 +99,13 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 			return
 		}
 
-		data, err := aggregatorService.All(context.Background())
+		data, err := aggregatorService.All(ctx)
 		if err != nil {
 			logger.LogError(err.Error(), nil)
 			return
 		}
 
-		_, err = workerService.CreateTries(context.Background(), data)
+		_, err = workerService.CreateTries(ctx, data)
 		if err != nil {
 			logger.LogError(err.Error(), nil)
 			return
@@ -130,11 +132,13 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	// start listensing for incoming chat message
 	go room.HandleMessages()
 
+	searchTool := search_tool.NewSearchToolTransport(db, logger, toArray)
 	return &App{
 		Auth:        auth,
 		User:        user,
 		Room:        room,
 		QuerySearch: querySearch,
 		ChatHub:     hub,
+		SearchTool:  searchTool,
 	}, nil
 }

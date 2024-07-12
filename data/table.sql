@@ -1,13 +1,14 @@
 create table if not exists users (
     id varchar(255) primary key,
+    avatar_url varchar(255),
     user_name varchar(255),
     first_name varchar(255),
     last_name varchar(255),
     middle_name varchar(255),
-    birth_date timestamp,
-    created_at timestamp default  CURRENT_TIMESTAMP,
+    birth_date TIMESTAMPTZ,
+    created_at TIMESTAMPTZ default  CURRENT_TIMESTAMP,
     created_by varchar(255),
-    updated_at timestamp default  CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ default  CURRENT_TIMESTAMP,
     updated_by varchar(255),
     version int4 not null default 1
 );
@@ -19,9 +20,9 @@ create table if not exists users_login_data (
     phone varchar(255),
     password_hash varchar(255),
     created_by varchar(255),
-    created_at timestamp default CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ default CURRENT_TIMESTAMP,
     updated_by varchar(255),
-    updated_at timestamp default CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ default CURRENT_TIMESTAMP,
     status varchar(255),
     provider varchar(255),
     version int4 not null default 1
@@ -31,9 +32,9 @@ create table if not exists rooms(
     id varchar(255) primary key,
     name varchar(255),
     members jsonb[],
-    created_at timestamp  default  CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ  default  CURRENT_TIMESTAMP,
     created_by varchar(255),
-    updated_at timestamp default  CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ default  CURRENT_TIMESTAMP,
     updated_by varchar(255),
     version int4 not null default 1
 
@@ -58,18 +59,42 @@ create table if not exists refresh_tokens(
     ip_address varchar(255),
     refresh_token varchar(255),
     expiry int8,
-    created_at timestamp,
-    updated_at timestamp,
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ,
     primary key(user_id, ip_address, browser, device_id)
 );
 
-create table if not exists notifications{
+create table if not exists notifications(
     id varchar(255),
     requestor_id varchar(255),
     subscribers jsonb[],
     is_read boolean,
-    content string,
-    created_at timestamp,
-    updated_at timestamp,
+    content VARCHAR(255),
+    created_at TIMESTAMPTZ,
+    updated_at TIMESTAMPTZ,
     primary key(id) 
-}
+);
+
+create table if not exists carriers (
+    id VARCHAR(255),
+    user_id VARCHAR(255),
+    company VARCHAR(255),
+    position varchar(255),
+    address varchar(255),
+    description VARCHAR(255),
+    start_time TIMESTAMPTZ,
+    end_time TIMESTAMPTZ,
+    show_with varchar(255)[],
+    not_show_with varchar(255)[],
+    primary key(id, user_id)
+);
+
+create table if not exists user_follow_count(
+    user_id VARCHAR(255),
+    count VARCHAR(255)
+);
+
+create table if not exists user_followers(
+    user_id VARCHAR(255),
+    follower_id VARCHAR(255)
+);

@@ -1,4 +1,4 @@
-package domain
+package search
 
 type SearchFilter struct {
 	Q     *string  `json:"q"`
