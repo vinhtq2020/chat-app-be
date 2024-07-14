@@ -78,7 +78,7 @@ func (u *AuthUsecase) LoginWithGoogle(ctx context.Context, email string) ([]vali
 
 }
 
-func (u *AuthUsecase) Login(ctx context.Context, email string, password string, browser string, ipAdress string, deviceId string) ([]validate.ErrorMsg, *jwt.TokenData, error) {
+func (u *AuthUsecase) Login(ctx context.Context, email string, password string, userAgent string, ipAdress string, deviceId string) ([]validate.ErrorMsg, *jwt.TokenData, error) {
 	errs, err := u.Validator.ValidateLogin(ctx, email)
 	if err != nil || len(errs) > 0 {
 		return errs, nil, err
@@ -109,7 +109,7 @@ func (u *AuthUsecase) Login(ctx context.Context, email string, password string, 
 
 	token := jwt.GenerateTokens(userInfo.Id, u.secretKey, jwt.AccessTokenDuration, jwt.RefreshTokenDuration)
 	_, err = u.refreshTokenRepository.InTransaction(ctx, func(db *gorm.DB) (int64, error) {
-		res, err := u.refreshTokenRepository.Delete(ctx, token.UserId, ipAdress, deviceId, browser)
+		res, err := u.refreshTokenRepository.Delete(ctx, token.UserId, ipAdress, deviceId, userAgent)
 		if err != nil {
 			return res, err
 		}
@@ -120,7 +120,7 @@ func (u *AuthUsecase) Login(ctx context.Context, email string, password string, 
 			Expiry:    jwt.RefreshTokenDuration,
 			IPAddress: ipAdress,
 			DeviceId:  deviceId,
-			Browser:   browser,
+			UserAgent: userAgent,
 			CreatedAt: time.Now(),
 		})
 		if err != nil {
@@ -180,12 +180,12 @@ func (u *AuthUsecase) Register(ctx context.Context, userLoginData domain.Account
 	return nil, res, nil
 }
 
-func (u *AuthUsecase) Logout(ctx context.Context, userId string, browser string, ipAdress string, deviceId string) (int64, error) {
-	return u.refreshTokenRepository.Delete(ctx, userId, ipAdress, deviceId, browser)
+func (u *AuthUsecase) Logout(ctx context.Context, userId string, userAgent string, ipAdress string, deviceId string) (int64, error) {
+	return u.refreshTokenRepository.Delete(ctx, userId, ipAdress, deviceId, userAgent)
 }
 
-func (u *AuthUsecase) RefreshToken(ctx context.Context, userId string, browser string, ipAddress string, deviceId string) (int64, string, error) {
-	oldToken, err := u.refreshTokenRepository.Load(ctx, browser, ipAddress, deviceId)
+func (u *AuthUsecase) RefreshToken(ctx context.Context, userId string, userAgent string, ipAddress string, deviceId string) (int64, string, error) {
+	oldToken, err := u.refreshTokenRepository.Load(ctx, userAgent, ipAddress, deviceId)
 	if err != nil || oldToken == nil {
 		return 0, "", err
 	}

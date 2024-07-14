@@ -15,7 +15,7 @@ func (a TokenType) Value() string {
 }
 
 const (
-	AccessTokenDuration            = time.Minute
+	AccessTokenDuration            = time.Hour
 	RefreshTokenDuration           = time.Hour
 	HS256                Algorithm = "HS256"
 	JWT                  TokenType = "JWT"

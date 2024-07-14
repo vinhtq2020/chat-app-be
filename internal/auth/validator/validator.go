@@ -6,6 +6,7 @@ import (
 	"go-service/internal/auth/domain"
 	sql "go-service/pkg/database/postgres"
 	"go-service/pkg/database/postgres/pq"
+	"go-service/pkg/logger"
 	"go-service/pkg/validate"
 	"net/mail"
 	"strings"
@@ -17,11 +18,12 @@ type AuthValidator struct {
 	table    string
 	db       *gorm.DB
 	validate validate.Validate
+	logger   *logger.Logger
 	toArray  pq.Array
 }
 
-func NewAuthValidator(db *gorm.DB, table string, validate validate.Validate, toArray pq.Array) *AuthValidator {
-	return &AuthValidator{validate: validate, db: db, toArray: toArray, table: table}
+func NewAuthValidator(db *gorm.DB, table string, validate validate.Validate, logger *logger.Logger, toArray pq.Array) *AuthValidator {
+	return &AuthValidator{validate: validate, db: db, toArray: toArray, table: table, logger: logger}
 }
 
 func (v *AuthValidator) ValidateLogin(ctx context.Context, email string) ([]validate.ErrorMsg, error) {
@@ -56,10 +58,14 @@ func (v *AuthValidator) ValidateRegister(ctx context.Context, user domain.Accoun
 						UNION
 						SELECT 'email' AS existing_field, email AS existing_value
 						FROM %s
-						WHERE email = $1`, v.table, v.table)
+						WHERE email = $1
+						UNION SELECT 'phone' AS existing_field, phone as existing_value
+						FROM %s 
+						WHERE phone = $3`, v.table, v.table, v.table)
 	res := []domain.ExistingField{}
-	err := sql.QueryWithArray(v.db, &res, qr, v.toArray, user.Email, user.Username)
+	err := sql.QueryWithArray(v.db, &res, qr, v.toArray, user.Email, user.Username, user.Phone)
 	if err != nil {
+		v.logger.LogError(err.Error(), nil)
 		return nil, err
 	}
 
@@ -75,6 +81,12 @@ func (v *AuthValidator) ValidateRegister(ctx context.Context, user domain.Accoun
 				Message: "email already existed",
 				Code:    "email",
 				Field:   "email",
+			})
+		} else if v.ExistingField == "phone" {
+			errMsgs = append(errMsgs, validate.ErrorMsg{
+				Message: "phone already existed",
+				Code:    "phone",
+				Field:   "phone",
 			})
 		}
 	}

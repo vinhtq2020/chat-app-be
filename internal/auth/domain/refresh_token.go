@@ -5,7 +5,7 @@ import "time"
 type RefreshToken struct {
 	UserId    string        `json:"userId" gorm:"column:user_id"`
 	DeviceId  string        `json:"deviceId" gorm:"column:device_id"`
-	Browser   string        `json:"browser" gorm:"column:browser"`
+	UserAgent string        `json:"userAgent" gorm:"column:user_agent"`
 	IPAddress string        `json:"ipAddress" gorm:"column:ip_address"`
 	Token     string        `json:"token" gorm:"column:token"`
 	Expiry    time.Duration `json:"expiry" gorm:"column:expiry"`

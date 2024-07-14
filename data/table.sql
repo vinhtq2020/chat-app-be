@@ -55,13 +55,13 @@ create table if not exists relations(
 create table if not exists refresh_tokens(
     user_id varchar(255),
     device_id varchar(255),
-    browser varchar(255),
+    user_agent varchar(255),
     ip_address varchar(255),
     refresh_token varchar(255),
     expiry int8,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
-    primary key(user_id, ip_address, browser, device_id)
+    primary key(user_id, ip_address, user_agent, device_id)
 );
 
 create table if not exists notifications(

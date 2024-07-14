@@ -6,7 +6,6 @@ import (
 	"go-service/pkg/jwt"
 	"go-service/pkg/logger"
 	"go-service/pkg/response"
-	useragent "go-service/pkg/user_agent"
 	"net/http"
 	"time"
 )
@@ -34,15 +33,13 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	deviceId := r.Header.Get("Device-ID")
 	ipAddress := r.Header.Get("X-Forwarded-For")
 
-	browser, _ := useragent.GetDeviceInfo(userAgent)
-
-	if len(deviceId) == 0 || len(browser) == 0 || len(ipAddress) == 0 {
+	if len(deviceId) == 0 || len(userAgent) == 0 || len(ipAddress) == 0 {
 		http.Error(w, "missing required Header", http.StatusBadRequest)
 		return
 	}
 
 	if userLoginData.Email != nil && userLoginData.Password != nil {
-		listErrs, token, err := h.authService.Login(r.Context(), *userLoginData.Email, *userLoginData.Password, browser, ipAddress, deviceId)
+		listErrs, token, err := h.authService.Login(r.Context(), *userLoginData.Email, *userLoginData.Password, userAgent, ipAddress, deviceId)
 		if err != nil {
 			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		} else if len(listErrs) > 0 {
@@ -129,14 +126,13 @@ func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	userAgent := r.UserAgent()
 	deviceId := r.Header[http.CanonicalHeaderKey("Device-ID")][0]
 	ipAddress := r.Header.Get("X-Forwarded-For")
-	browser, _ := useragent.GetDeviceInfo(userAgent)
 
-	if len(browser) == 0 || len(deviceId) == 0 || len(ipAddress) == 0 || len(userId) == 0 {
+	if len(userAgent) == 0 || len(deviceId) == 0 || len(ipAddress) == 0 || len(userId) == 0 {
 		http.Error(w, "Missing required headers", http.StatusBadRequest)
 		return
 	}
 
-	res, err := h.authService.Logout(r.Context(), userId, browser, ipAddress, deviceId)
+	res, err := h.authService.Logout(r.Context(), userId, userAgent, ipAddress, deviceId)
 	if err != nil {
 		http.Error(w, "Internal Sever Error", http.StatusInternalServerError)
 	} else if res > 0 {
@@ -178,5 +174,5 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		Secure:   true,
 	})
-	response.Response(w, http.StatusOK, nil)
+	response.Response(w, http.StatusOK, 1)
 }

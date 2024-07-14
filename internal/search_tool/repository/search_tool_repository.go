@@ -28,7 +28,7 @@ func NewSearchToolsRepository(DB *gorm.DB, toArray pq.Array, logger *logger.Logg
 
 func (r *SearchToolRepository) Search(filter domain.SearchFilter) ([]domain.SearchItem, error) {
 	var res []domain.SearchItem
-	selectClause := "select a.user_name, a.avatar_url from users a where a.user_name like CONCAT('%%',%s::text,'%%')"
+	selectClause := "select a.id, a.user_name, a.avatar_url from users a where a.user_name like CONCAT('%%',%s::text,'%%')"
 	filterClause := search.BuildFilter(filter.SearchFilter)
 	stmt := fmt.Sprintf(selectClause+filterClause, sql.BuildParam(1))
 	err := sql.QueryWithArray(r.DB, &res, stmt, r.toArray, filter.Q)

@@ -82,7 +82,7 @@ func LogRequestHandler(h http.Handler, logger *logger.Logger) http.Handler {
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, r)
 		log.Println(fmt.Sprintf("%q", rec.Body))
-		for k, v := range rec.HeaderMap {
+		for k, v := range rec.Header() {
 			w.Header()[k] = v
 		}
 		w.WriteHeader(rec.Code)
