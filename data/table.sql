@@ -45,12 +45,21 @@ create table if not exists sequences(
     sequence_no int4  default 1
 );
 
-create table if not exists relations(
+-- status: friend | none | blocked
+create table if not exists friends(
     user_id1 varchar(255),
     user_id2 varchar(255),
-    status varchar(255),
+    status varchar(255), 
     primary key(user_id1, user_id2)
 );
+
+create table if not exists friend_requests {
+    id varchar(255) primary key,
+    requester_id varchar(255),
+    requestee_id varchar(255),
+    created_at varchar(255),
+    updated_at varchar(255)
+};
 
 create table if not exists refresh_tokens(
     user_id varchar(255),
