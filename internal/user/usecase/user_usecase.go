@@ -1,11 +1,11 @@
 package usecase
 
-import "go-service/internal/user/domain"
+import "go-service/internal/user/user_domain"
 
 type UserUsecase struct {
-	repo domain.UserRepository
+	repo user_domain.UserRepository
 }
 
-func NewUserUsecase(repo domain.UserRepository) *UserUsecase {
+func NewUserUsecase(repo user_domain.UserRepository) *UserUsecase {
 	return &UserUsecase{repo: repo}
 }

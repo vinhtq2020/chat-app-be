@@ -1,4 +1,4 @@
-package domain
+package friend_domain
 
 import (
 	"net/http"

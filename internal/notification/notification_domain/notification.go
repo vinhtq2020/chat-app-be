@@ -1,6 +1,8 @@
-package domain
+package notification_domain
 
-import "time"
+import (
+	"time"
+)
 
 type Notification struct {
 	Id          string       `json:"id" gorm:"column:id"`
@@ -12,6 +14,6 @@ type Notification struct {
 }
 
 type Subscriber struct {
-	SubscriberId string `json:"subscriberId" gorm:"column:subscriber_id"`
-	IsRead       bool   `json:"isRead" gorm:"column:is_read"`
+	Id     string `json:"id" gorm:"column:subscriber_id"`
+	IsRead bool   `json:"isRead" gorm:"column:is_read"`
 }

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"go-service/internal/user/domain"
+	"go-service/internal/user/user_domain"
 	sql "go-service/pkg/database/postgres"
 	"go-service/pkg/logger"
 	"reflect"
@@ -19,12 +19,12 @@ type UserRepository struct {
 }
 
 func NewUserRepository(db *gorm.DB, table string, logger *logger.Logger) *UserRepository {
-	modelType := reflect.TypeOf(domain.User{})
+	modelType := reflect.TypeOf(user_domain.User{})
 	return &UserRepository{db: db, modelType: modelType, table: table}
 }
 
-func (r *UserRepository) Load(ctx context.Context, id string) (domain.User, error) {
-	var user domain.User
+func (r *UserRepository) Load(ctx context.Context, id string) (user_domain.User, error) {
+	var user user_domain.User
 	qr := "Select * from users where id = $1"
 
 	r.db.Raw(qr, "123").Scan(&user)
@@ -35,7 +35,7 @@ func (r *UserRepository) buildParam(s int) string {
 	return fmt.Sprintf("$%v", s)
 }
 
-func (r *UserRepository) Create(ctx context.Context, user domain.User) (int64, error) {
+func (r *UserRepository) Create(ctx context.Context, user user_domain.User) (int64, error) {
 	qr, params, err := sql.BuildToInsert(r.db, r.table, user, r.buildParam, r.modelType)
 	if err != nil {
 		return -1, err

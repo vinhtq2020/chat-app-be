@@ -4,22 +4,27 @@ import (
 	"context"
 	"go-service/internal/auth"
 	auth_domain "go-service/internal/auth/domain"
+	"go-service/internal/autocomplete"
 	"go-service/internal/autocomplete/aggregator"
 	querysearch "go-service/internal/autocomplete/query_search"
 	query_search_domain "go-service/internal/autocomplete/query_search/domain"
 	"go-service/internal/autocomplete/worker"
 	"go-service/internal/configs"
+	"go-service/internal/friend"
+	friend_domain "go-service/internal/friend/domain"
+	"go-service/internal/notification"
+	"go-service/internal/notification/notification_domain"
+
 	"go-service/internal/room"
 	room_domain "go-service/internal/room/domain"
 	"go-service/internal/search_tool"
 	"go-service/internal/sequence"
 	"go-service/internal/user"
-	user_domain "go-service/internal/user/domain"
+	user_domain "go-service/internal/user/user_domain"
 	"go-service/pkg/cron"
 	"go-service/pkg/database/postgres"
 	"go-service/pkg/logger"
 	"go-service/pkg/validate"
-	ws "go-service/pkg/ws/chat"
 	"reflect"
 	"strings"
 	"time"
@@ -38,12 +43,13 @@ const (
 )
 
 type App struct {
-	Auth        auth_domain.AuthTransport
-	User        user_domain.UserTransport
-	Room        room_domain.RoomTransport
-	QuerySearch query_search_domain.QuerySearchTransport
-	SearchTool  search_tool.SearchToolTransport
-	ChatHub     *ws.Hub
+	Auth         auth_domain.AuthTransport
+	User         user_domain.UserTransport
+	Room         room_domain.RoomTransport
+	QuerySearch  query_search_domain.QuerySearchTransport
+	SearchTool   search_tool.SearchToolTransport
+	Notification notification_domain.NotificacationTransport
+	Friend       friend_domain.FriendTransport
 }
 
 func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, configs configs.Config, logger *logger.Logger) (*App, error) {
@@ -87,58 +93,28 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	}
 
 	logCron := cron.NewCron()
-	logCron.AddJob(scheduler, cron.JobFunc(func() {
-		res, err := aggregatorService.AggregatedData(ctx)
-		if err != nil {
-			logger.LogError(err.Error(), nil)
-			return
-		}
-
-		if res == 0 {
-			logger.LogInfo("no search queries to aggregate", nil)
-			return
-		}
-
-		data, err := aggregatorService.All(ctx)
-		if err != nil {
-			logger.LogError(err.Error(), nil)
-			return
-		}
-
-		_, err = workerService.CreateTries(ctx, data)
-		if err != nil {
-			logger.LogError(err.Error(), nil)
-			return
-		}
-
-		trie, err := workerService.LoadTries(ctx)
-		if err != nil {
-			logger.LogError(err.Error(), nil)
-			return
-		}
-		// cache new trie on redis
-		err = rdb.Set(ctx, "autocomplete-trie", trie, 0).Err()
-		if err != nil {
-			logger.LogError(err.Error(), nil)
-			return
-		}
-		logger.LogInfo("aggregated autocomplete trie success", nil)
-	}))
+	logCron.AddJob(scheduler, cron.JobFunc(func() { autocomplete.AggeratedData(ctx, aggregatorService, workerService, rdb, logger) }))
 	go logCron.Start()
-
-	hub := ws.NewHub()
-	go hub.Run()
 
 	// start listensing for incoming chat message
 	go room.HandleMessages()
 
+	notificationService := notification.NewNotificationService(db, postgres.BuildParam, toArray)
+	notification := notification.NewNotificationHandler(upgrader, logger)
+
+	// start listening for new notification to users
+	go notification.HandleMessage()
+
 	searchTool := search_tool.NewSearchToolTransport(db, logger, toArray)
+
+	friend := friend.NewFriendHandler(db, notificationService, userrepo, logger)
 	return &App{
-		Auth:        auth,
-		User:        user,
-		Room:        room,
-		QuerySearch: querySearch,
-		ChatHub:     hub,
-		SearchTool:  searchTool,
+		Auth:         auth,
+		User:         user,
+		Room:         room,
+		QuerySearch:  querySearch,
+		SearchTool:   searchTool,
+		Notification: notification,
+		Friend:       friend,
 	}, nil
 }

@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"go-service/internal/notification/domain"
+	domain_notification "go-service/internal/notification/notification_domain"
 	sql "go-service/pkg/database/postgres"
 	"go-service/pkg/database/postgres/pq"
 	"reflect"
@@ -11,7 +11,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type notificationStorageRepository struct {
+type notificationRepository struct {
 	table      string
 	buildParam func(n int) string
 	db         *gorm.DB
@@ -19,8 +19,8 @@ type notificationStorageRepository struct {
 	modelType  reflect.Type
 }
 
-func NewStorageRepository(table string, buildParam func(int) string, db *gorm.DB, toArray pq.Array) domain.NotificationStorageRepository {
-	return &notificationStorageRepository{
+func NewNotificationRepository(table string, buildParam func(int) string, db *gorm.DB, toArray pq.Array) domain_notification.NotificationRepository {
+	return &notificationRepository{
 		table:      table,
 		buildParam: buildParam,
 		db:         db,
@@ -28,7 +28,7 @@ func NewStorageRepository(table string, buildParam func(int) string, db *gorm.DB
 	}
 }
 
-func (r *notificationStorageRepository) Total(ctx context.Context, clientID string) (int64, error) {
+func (r *notificationRepository) Total(ctx context.Context, clientID string) (int64, error) {
 	var total int64
 	qr := "Select count(*) from %s where userId = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
@@ -36,7 +36,7 @@ func (r *notificationStorageRepository) Total(ctx context.Context, clientID stri
 	return total, err
 }
 
-func (r *notificationStorageRepository) TotalUnread(ctx context.Context, clientID string) (int64, error) {
+func (r *notificationRepository) TotalUnread(ctx context.Context, clientID string) (int64, error) {
 	var total int64
 	qr := "Select count(*) from %s where userId = %s and is_read = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1), r.buildParam(2))
@@ -44,7 +44,7 @@ func (r *notificationStorageRepository) TotalUnread(ctx context.Context, clientI
 	return total, err
 }
 
-func (r *notificationStorageRepository) Insert(ctx context.Context, notification domain.Notification) (int64, error) {
+func (r *notificationRepository) Insert(ctx context.Context, notification domain_notification.Notification) (int64, error) {
 	qr, param, err := sql.BuildToInsert(r.db, r.table, notification, r.buildParam, r.modelType)
 	if err != nil {
 		return -1, err
@@ -53,9 +53,9 @@ func (r *notificationStorageRepository) Insert(ctx context.Context, notification
 	res, err := sql.Exec(r.db, qr, param...)
 	return res, err
 }
-func (r *notificationStorageRepository) Patch(ctx context.Context, notification map[string]interface{}) (int64, error) {
+func (r *notificationRepository) Patch(ctx context.Context, notification map[string]interface{}) (int64, error) {
 	panic("")
 }
-func (r *notificationStorageRepository) Delete(ctx context.Context, id string) (int64, error) {
+func (r *notificationRepository) Delete(ctx context.Context, id string) (int64, error) {
 	panic("")
 }

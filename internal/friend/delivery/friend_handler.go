@@ -1,18 +1,18 @@
 package delivery
 
 import (
-	"go-service/internal/friend/domain"
+	friend_domain "go-service/internal/friend/domain"
 	"go-service/pkg/logger"
 	"go-service/pkg/response"
 	"net/http"
 )
 
 type FriendHandler struct {
-	friendService domain.FriendService
+	friendService friend_domain.FriendService
 	logger        *logger.Logger
 }
 
-func NewFriendHandler(service domain.FriendService) *FriendHandler {
+func NewFriendHandler(service friend_domain.FriendService) *FriendHandler {
 	return &FriendHandler{friendService: service}
 }
 

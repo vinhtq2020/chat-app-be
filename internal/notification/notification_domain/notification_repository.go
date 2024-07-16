@@ -1,8 +1,8 @@
-package domain
+package notification_domain
 
 import "context"
 
-type NotificationStorageRepository interface {
+type NotificationRepository interface {
 	Total(ctx context.Context, clientID string) (int64, error)
 	TotalUnread(ctx context.Context, clientID string) (int64, error)
 	Insert(ctx context.Context, notification Notification) (int64, error)

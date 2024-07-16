@@ -1,32 +1,32 @@
-package notification
+package usecase
 
 import (
 	"context"
-	"go-service/internal/notification/domain"
+	domain_notification "go-service/internal/notification/notification_domain"
 	"time"
 )
 
 type notificationService struct {
-	storageRepository domain.NotificationStorageRepository
+	storageRepository domain_notification.NotificationRepository
 }
 
-func NewNotificationService(storageRepository domain.NotificationStorageRepository) domain.NotificationService {
+func NewNotificationService(storageRepository domain_notification.NotificationRepository) domain_notification.NotificationService {
 	return &notificationService{
 		storageRepository: storageRepository,
 	}
 }
 
 func (n *notificationService) Notify(ctx context.Context, generateId func() string, requestorId string, content string, subscriberIds []string) (int64, error) {
-	var subscribers []domain.Subscriber
+	var subscribers []domain_notification.Subscriber
 	for _, v := range subscriberIds {
-		subscribers = append(subscribers, domain.Subscriber{
-			SubscriberId: v,
-			IsRead:       false,
+		subscribers = append(subscribers, domain_notification.Subscriber{
+			Id:     v,
+			IsRead: false,
 		})
 
 	}
 
-	res, err := n.storageRepository.Insert(ctx, domain.Notification{
+	res, err := n.storageRepository.Insert(ctx, domain_notification.Notification{
 		Id:          generateId(),
 		RequestorId: requestorId,
 		Subscribers: subscribers,

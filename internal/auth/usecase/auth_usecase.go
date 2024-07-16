@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"go-service/internal/auth/domain"
-	user_info_domain "go-service/internal/user/domain"
+	user_info_domain "go-service/internal/user/user_domain"
 	"go-service/pkg/jwt"
 	"go-service/pkg/model"
 	"go-service/pkg/uuid"

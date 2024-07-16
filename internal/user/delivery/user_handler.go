@@ -2,7 +2,7 @@ package delivery
 
 import (
 	"encoding/json"
-	"go-service/internal/user/domain"
+	"go-service/internal/user/user_domain"
 	"go-service/internal/utils/search"
 	"go-service/pkg/convert"
 	"go-service/pkg/model"
@@ -10,11 +10,11 @@ import (
 )
 
 type UserHandler struct {
-	service       domain.UserService
+	service       user_domain.UserService
 	searchService search.SearchService
 }
 
-func NewUserHandler(service domain.UserService, searchService search.SearchService) *UserHandler {
+func NewUserHandler(service user_domain.UserService, searchService search.SearchService) *UserHandler {
 	return &UserHandler{
 		service:       service,
 		searchService: searchService,
@@ -71,7 +71,7 @@ func (u *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
 }
 
 func (*UserHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var user domain.User
+	var user user_domain.User
 
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
