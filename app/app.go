@@ -14,7 +14,6 @@ import (
 	friend_domain "go-service/internal/friend/domain"
 	"go-service/internal/notification"
 	"go-service/internal/notification/domain"
-	"go-service/internal/notification/hub"
 	"net/http"
 
 	"go-service/internal/room"
@@ -104,10 +103,10 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	// start listensing for incoming chat message
 	go room.HandleMessages()
 
-	hub := hub.NewNotificationHub()
-	notificationService := notification.NewNotificationService(db, hub, logger, postgres.BuildParam, toArray)
-	notification := notification.NewNotificationHandler(upgrader, hub, logger)
-
+	broastcast := make(chan domain.Message)
+	notificationService := notification.NewNotificationService(db, broastcast, logger, postgres.BuildParam, toArray)
+	notification := notification.NewNotificationHandler(upgrader, broastcast, logger)
+	go notification.HandleMessages()
 	searchTool := search_tool.NewSearchToolTransport(db, postgres.BuildParam, logger, toArray)
 
 	friend := friend.NewFriendHandler(db, notificationService, logger)

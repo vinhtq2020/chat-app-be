@@ -2,19 +2,20 @@ package usecase
 
 import (
 	"context"
+	"go-service/internal/notification/domain"
 	domain_notification "go-service/internal/notification/domain"
 	"time"
 )
 
 type notificationService struct {
-	hub               domain_notification.Hub
+	broastcast        chan domain.Message
 	storageRepository domain_notification.NotificationRepository
 }
 
-func NewNotificationService(storageRepository domain_notification.NotificationRepository, hub domain_notification.Hub) domain_notification.NotificationService {
+func NewNotificationService(storageRepository domain_notification.NotificationRepository, broastcast chan domain.Message) domain_notification.NotificationService {
 	return &notificationService{
 		storageRepository: storageRepository,
-		hub:               hub,
+		broastcast:        broastcast,
 	}
 }
 
@@ -42,10 +43,10 @@ func (sv *notificationService) Notify(ctx context.Context, generateId func() str
 	// 	return -1, err
 	// }
 
-	sv.hub.SendMessage(domain_notification.WsMsg{
+	sv.broastcast <- domain.Message{
 		Name: "notified",
 		Data: notification,
-	})
+	}
 	return 1, nil
 
 }
