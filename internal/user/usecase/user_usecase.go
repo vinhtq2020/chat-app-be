@@ -1,6 +1,6 @@
 package usecase
 
-import "go-service/internal/user/user_domain"
+import user_domain "go-service/internal/user/domain"
 
 type UserUsecase struct {
 	repo user_domain.UserRepository

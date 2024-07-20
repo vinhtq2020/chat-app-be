@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
-	"go-service/internal/user/user_domain"
+	user_domain "go-service/internal/user/domain"
 	sql "go-service/pkg/database/postgres"
 	"go-service/pkg/logger"
 	"reflect"

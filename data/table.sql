@@ -6,15 +6,15 @@ create table if not exists users (
     last_name varchar(255),
     middle_name varchar(255),
     birth_date TIMESTAMPTZ,
-    created_at TIMESTAMPTZ default  CURRENT_TIMESTAMP,
+    created_at TIMESTAMPTZ default CURRENT_TIMESTAMP,
     created_by varchar(255),
-    updated_at TIMESTAMPTZ default  CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ default CURRENT_TIMESTAMP,
     updated_by varchar(255),
     version int4 not null default 1
 );
 
 create table if not exists users_login_data (
-    id varchar(255) primary key, 
+    id varchar(255) primary key,
     user_name varchar(255),
     email varchar(255),
     phone varchar(255),
@@ -38,30 +38,34 @@ create table if not exists rooms(
     updated_by varchar(255),
     version int4 not null default 1
 
+
 );
 
-create table if not exists sequences(
+create table if not exists sequences (
     name varchar(255) primary key,
-    sequence_no int4  default 1
+    sequence_no int4 default 1
 );
 
 -- status: friend | none | blocked
-create table if not exists friends(
+create table if not exists friends (
     user_id1 varchar(255),
     user_id2 varchar(255),
-    status varchar(255), 
-    primary key(user_id1, user_id2)
+    status varchar(255),
+    primary key (user_id1, user_id2)
 );
 
-create table if not exists friend_requests {
+create table if not exists friend_requests (
     id varchar(255) primary key,
     requester_id varchar(255),
     requestee_id varchar(255),
-    created_at varchar(255),
-    updated_at varchar(255)
-};
+    status VARCHAR(255),
+    created_at TIMESTAMPTZ,
+    created_by varchar(255),
+    updated_at TIMESTAMPTZ,
+    updated_by varchar(255)
+);
 
-create table if not exists refresh_tokens(
+create table if not exists refresh_tokens (
     user_id varchar(255),
     device_id varchar(255),
     user_agent varchar(255),
@@ -70,7 +74,12 @@ create table if not exists refresh_tokens(
     expiry int8,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
-    primary key(user_id, ip_address, user_agent, device_id)
+    primary key (
+        user_id,
+        ip_address,
+        user_agent,
+        device_id
+    )
 );
 
 create table if not exists notifications(
@@ -98,12 +107,12 @@ create table if not exists carriers (
     primary key(id, user_id)
 );
 
-create table if not exists user_follow_count(
+create table if not exists user_follow_count (
     user_id VARCHAR(255),
     count VARCHAR(255)
 );
 
-create table if not exists user_followers(
+create table if not exists user_followers (
     user_id VARCHAR(255),
     follower_id VARCHAR(255)
 );

@@ -1,4 +1,4 @@
-package user_domain
+package domain
 
 import (
 	"net/http"

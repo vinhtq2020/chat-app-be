@@ -1,7 +1,7 @@
 package delivery
 
 import (
-	domain_notification "go-service/internal/notification/notification_domain"
+	domain_notification "go-service/internal/notification/domain"
 	"go-service/pkg/logger"
 	"net/http"
 
@@ -9,58 +9,30 @@ import (
 )
 
 type NotificationHandler struct {
-	clients   map[string]*websocket.Conn
-	broadcast chan domain_notification.Notification
-	upgrader  *websocket.Upgrader
-	logger    *logger.Logger
+	hub      domain_notification.Hub
+	upgrader *websocket.Upgrader
+	logger   *logger.Logger
 }
 
-func NewNotificationHandler(upgrader *websocket.Upgrader, logger *logger.Logger) *NotificationHandler {
+func NewNotificationHandler(upgrader *websocket.Upgrader, hub domain_notification.Hub, logger *logger.Logger) *NotificationHandler {
 	return &NotificationHandler{
-		clients:   map[string]*websocket.Conn{},
-		broadcast: make(chan domain_notification.Notification),
-		upgrader:  upgrader,
-		logger:    logger,
+		upgrader: upgrader,
+		logger:   logger,
+		hub:      hub,
 	}
 }
 
-func (h *NotificationHandler) HandleConnections(w http.ResponseWriter, r *http.Request) {
-	ws, err := h.upgrader.Upgrade(w, r, nil)
+func (h *NotificationHandler) ServeWs(w http.ResponseWriter, r *http.Request) {
+	conn, err := h.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		h.logger.LogError(err.Error(), nil)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	defer ws.Close()
 	userId := r.Context().Value("userId").(string)
-	h.clients[userId] = ws
-	for {
-		var noti domain_notification.Notification
-		err := ws.ReadJSON(noti)
-		if err != nil {
-			h.logger.LogError(err.Error(), nil)
-			delete(h.clients, userId)
-			break
-		}
+	client := domain_notification.NewClient(userId, conn, h.hub, h.logger)
+	h.hub.Register(client)
 
-		h.broadcast <- noti
-	}
-}
-
-func (h *NotificationHandler) HandleMessage() {
-	for {
-		noti := <-h.broadcast
-		for _, subscriber := range noti.Subscribers {
-			conn, existed := h.clients[subscriber.Id]
-			if !existed {
-				continue
-			}
-			err := conn.WriteJSON(noti)
-			if err != nil {
-				h.logger.LogError(err.Error(), nil)
-				conn.Close()
-				delete(h.clients, subscriber.Id)
-			}
-		}
-	}
+	go client.WritePump()
+	go client.ReadPump()
 }

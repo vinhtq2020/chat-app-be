@@ -2,9 +2,9 @@ package user
 
 import (
 	"go-service/internal/user/delivery"
+	user_domain "go-service/internal/user/domain"
 	"go-service/internal/user/repository"
 	"go-service/internal/user/usecase"
-	"go-service/internal/user/user_domain"
 	"go-service/internal/utils/search"
 	"go-service/pkg/database/postgres/pq"
 	"go-service/pkg/logger"

@@ -2,7 +2,7 @@ package delivery
 
 import (
 	"encoding/json"
-	"go-service/internal/user/user_domain"
+	user_domain "go-service/internal/user/domain"
 	"go-service/internal/utils/search"
 	"go-service/pkg/convert"
 	"go-service/pkg/model"

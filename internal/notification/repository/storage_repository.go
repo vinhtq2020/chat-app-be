@@ -3,9 +3,10 @@ package repository
 import (
 	"context"
 	"fmt"
-	domain_notification "go-service/internal/notification/notification_domain"
+	domain_notification "go-service/internal/notification/domain"
 	sql "go-service/pkg/database/postgres"
 	"go-service/pkg/database/postgres/pq"
+	"go-service/pkg/logger"
 	"reflect"
 
 	"gorm.io/gorm"
@@ -17,14 +18,18 @@ type notificationRepository struct {
 	db         *gorm.DB
 	toArray    pq.Array
 	modelType  reflect.Type
+	logger     *logger.Logger
 }
 
-func NewNotificationRepository(table string, buildParam func(int) string, db *gorm.DB, toArray pq.Array) domain_notification.NotificationRepository {
+func NewNotificationRepository(table string, buildParam func(int) string, db *gorm.DB, logger *logger.Logger, toArray pq.Array) domain_notification.NotificationRepository {
+	modelType := reflect.TypeOf(domain_notification.Notification{})
 	return &notificationRepository{
 		table:      table,
 		buildParam: buildParam,
 		db:         db,
 		toArray:    toArray,
+		modelType:  modelType,
+		logger:     logger,
 	}
 }
 
@@ -51,6 +56,9 @@ func (r *notificationRepository) Insert(ctx context.Context, notification domain
 	}
 
 	res, err := sql.Exec(r.db, qr, param...)
+	if err != nil {
+		r.logger.LogError(err.Error(), nil)
+	}
 	return res, err
 }
 func (r *notificationRepository) Patch(ctx context.Context, notification map[string]interface{}) (int64, error) {

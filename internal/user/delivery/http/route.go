@@ -1,7 +1,7 @@
 package http
 
 import (
-	"go-service/internal/user/user_domain"
+	user_domain "go-service/internal/user/domain"
 	"net/http"
 )
 

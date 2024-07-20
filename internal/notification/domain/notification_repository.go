@@ -1,4 +1,4 @@
-package notification_domain
+package domain
 
 import "context"
 

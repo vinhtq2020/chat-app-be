@@ -2,21 +2,23 @@ package usecase
 
 import (
 	"context"
-	domain_notification "go-service/internal/notification/notification_domain"
+	domain_notification "go-service/internal/notification/domain"
 	"time"
 )
 
 type notificationService struct {
+	hub               domain_notification.Hub
 	storageRepository domain_notification.NotificationRepository
 }
 
-func NewNotificationService(storageRepository domain_notification.NotificationRepository) domain_notification.NotificationService {
+func NewNotificationService(storageRepository domain_notification.NotificationRepository, hub domain_notification.Hub) domain_notification.NotificationService {
 	return &notificationService{
 		storageRepository: storageRepository,
+		hub:               hub,
 	}
 }
 
-func (n *notificationService) Notify(ctx context.Context, generateId func() string, requestorId string, content string, subscriberIds []string) (int64, error) {
+func (sv *notificationService) Notify(ctx context.Context, generateId func() string, requestorId string, content string, subscriberIds []string) (int64, error) {
 	var subscribers []domain_notification.Subscriber
 	for _, v := range subscriberIds {
 		subscribers = append(subscribers, domain_notification.Subscriber{
@@ -26,17 +28,24 @@ func (n *notificationService) Notify(ctx context.Context, generateId func() stri
 
 	}
 
-	res, err := n.storageRepository.Insert(ctx, domain_notification.Notification{
+	notification := domain_notification.Notification{
 		Id:          generateId(),
 		RequestorId: requestorId,
 		Subscribers: subscribers,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 		Content:     content,
-	})
-
-	if err != nil {
-		return res, err
 	}
-	panic("")
+
+	// res, err := sv.storageRepository.Insert(ctx, notification)
+	// if err != nil {
+	// 	return -1, err
+	// }
+
+	sv.hub.SendMessage(domain_notification.WsMsg{
+		Name: "notified",
+		Data: notification,
+	})
+	return 1, nil
+
 }

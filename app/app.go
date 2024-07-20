@@ -13,14 +13,16 @@ import (
 	"go-service/internal/friend"
 	friend_domain "go-service/internal/friend/domain"
 	"go-service/internal/notification"
-	"go-service/internal/notification/notification_domain"
+	"go-service/internal/notification/domain"
+	"go-service/internal/notification/hub"
+	"net/http"
 
 	"go-service/internal/room"
 	room_domain "go-service/internal/room/domain"
 	"go-service/internal/search_tool"
 	"go-service/internal/sequence"
 	"go-service/internal/user"
-	user_domain "go-service/internal/user/user_domain"
+	user_domain "go-service/internal/user/domain"
 	"go-service/pkg/cron"
 	"go-service/pkg/database/postgres"
 	"go-service/pkg/logger"
@@ -48,7 +50,7 @@ type App struct {
 	Room         room_domain.RoomTransport
 	QuerySearch  query_search_domain.QuerySearchTransport
 	SearchTool   search_tool.SearchToolTransport
-	Notification notification_domain.NotificacationTransport
+	Notification domain.NotificacationTransport
 	Friend       friend_domain.FriendTransport
 }
 
@@ -77,6 +79,9 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	upgrader := websocket.Upgrader{
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
+		CheckOrigin: func(r *http.Request) bool {
+			return true
+		},
 	}
 	sequenceService := sequence.NewSequenceService(db)
 
@@ -99,15 +104,13 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	// start listensing for incoming chat message
 	go room.HandleMessages()
 
-	notificationService := notification.NewNotificationService(db, postgres.BuildParam, toArray)
-	notification := notification.NewNotificationHandler(upgrader, logger)
+	hub := hub.NewNotificationHub()
+	notificationService := notification.NewNotificationService(db, hub, logger, postgres.BuildParam, toArray)
+	notification := notification.NewNotificationHandler(upgrader, hub, logger)
 
-	// start listening for new notification to users
-	go notification.HandleMessage()
+	searchTool := search_tool.NewSearchToolTransport(db, postgres.BuildParam, logger, toArray)
 
-	searchTool := search_tool.NewSearchToolTransport(db, logger, toArray)
-
-	friend := friend.NewFriendHandler(db, notificationService, userrepo, logger)
+	friend := friend.NewFriendHandler(db, notificationService, logger)
 	return &App{
 		Auth:         auth,
 		User:         user,

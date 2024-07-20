@@ -15,8 +15,8 @@ type SearchToolTransport interface {
 	Search(w http.ResponseWriter, r *http.Request)
 }
 
-func NewSearchToolTransport(db *gorm.DB, logger *logger.Logger, toArray pq.Array) SearchToolTransport {
-	repository := repository.NewSearchToolsRepository(db, toArray, logger)
+func NewSearchToolTransport(db *gorm.DB, buildParam func(int) string, logger *logger.Logger, toArray pq.Array) SearchToolTransport {
+	repository := repository.NewSearchToolsRepository(db, buildParam, toArray, logger)
 	sv := service.NewSearchToolService(repository)
 	handler := delivery.NewSearchToolsHandler(sv)
 	return handler

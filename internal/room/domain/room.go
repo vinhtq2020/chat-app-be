@@ -1,7 +1,7 @@
 package domain
 
 import (
-	"go-service/internal/user/user_domain"
+	user_domain "go-service/internal/user/domain"
 	"time"
 )
 

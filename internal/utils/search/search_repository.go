@@ -20,8 +20,8 @@ func NewSearchRepository(table string, db *gorm.DB, toArray pq.Array) *searchRep
 }
 
 func (f *searchRepository) Search(ctx context.Context, result interface{}, filter SearchFilter) error {
-	qr := BuildQuery(f.table, filter)
-	err := sql.QueryWithArray(f.db, result, qr, f.toArray)
+	params, qr := BuildQuery(f.table, filter)
+	err := sql.QueryWithArray(f.db, result, qr, f.toArray, params...)
 	return err
 }
 
@@ -35,18 +35,23 @@ func (f *searchRepository) Total(ctx context.Context) (int64, error) {
 	return total, nil
 }
 
-func BuildQuery(table string, filter SearchFilter) string {
+func BuildQuery(table string, filter SearchFilter) (params []interface{}, qr string) {
 	selectClause := fmt.Sprintf("select * from %s ", table)
-	filterClause := BuildFilter(filter)
-	return selectClause + filterClause
+	params, filterClause := BuildFilter(filter)
+	return params, selectClause + filterClause
 }
 
-func BuildFilter(filter SearchFilter) string {
+func BuildFilter(filter SearchFilter, opts ...interface{}) (params []interface{}, qr string) {
+	buildParam := sql.BuildParam
+	if len(opts) > 0 {
+		buildParam = opts[0].(func(n int) string)
+	}
 	whereClause := "where"
 	orderByClause := ""
 	limitClause := ""
 	if filter.Q != nil {
-		whereClause += fmt.Sprintf("%s q like %%%s%% ", whereClause, *filter.Q)
+		params = append(params, *filter.Q)
+		whereClause = fmt.Sprintf("%s q like CONCAT('%%',%s::text,'%%')", whereClause, buildParam(len(params)))
 	}
 
 	if len(filter.Sorts) > 0 {
@@ -68,5 +73,5 @@ func BuildFilter(filter SearchFilter) string {
 		offset := *filter.Page * *filter.Limit
 		limitClause = fmt.Sprintf("LIMIT %v OFFSET %v ", filter.Limit, offset)
 	}
-	return orderByClause + limitClause
+	return params, whereClause + orderByClause + limitClause
 }

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"go-service/internal/auth/domain"
-	user_info_domain "go-service/internal/user/user_domain"
+	user_domain "go-service/internal/user/domain"
 	"go-service/pkg/jwt"
 	"go-service/pkg/model"
 	"go-service/pkg/uuid"
@@ -18,7 +18,7 @@ import (
 
 type AuthUsecase struct {
 	accountRepository      domain.AccountRepository
-	userRepository         user_info_domain.UserRepository
+	userRepository         user_domain.UserRepository
 	refreshTokenRepository domain.RefreshTokenRepository
 	Validator              domain.AccountValidator
 	secretKey              string
@@ -26,7 +26,7 @@ type AuthUsecase struct {
 
 func NewAuthService(repository domain.AccountRepository,
 	Validator domain.AccountValidator,
-	userInfoRepository user_info_domain.UserRepository,
+	userInfoRepository user_domain.UserRepository,
 	refreshTokenRepository domain.RefreshTokenRepository,
 	secretKey string,
 ) *AuthUsecase {
@@ -104,7 +104,12 @@ func (u *AuthUsecase) Login(ctx context.Context, email string, password string, 
 	}
 	err = bcrypt.CompareHashAndPassword([]byte(*userInfo.PasswordHash), []byte(password))
 	if err != nil {
-		return nil, nil, err
+		errs = append(errs, validate.ErrorMsg{
+			Code:    "account_password_incorrect",
+			Message: "email or password is incorrect",
+			Field:   "common",
+		})
+		return errs, nil, nil
 	}
 
 	token := jwt.GenerateTokens(userInfo.Id, u.secretKey, jwt.AccessTokenDuration, jwt.RefreshTokenDuration)
@@ -150,7 +155,6 @@ func (u *AuthUsecase) Register(ctx context.Context, userLoginData domain.Account
 	if err != nil {
 		return nil, -1, err
 	}
-
 	hashString := string(hash[:])
 	userLoginData.PasswordHash = &hashString
 
@@ -165,7 +169,7 @@ func (u *AuthUsecase) Register(ctx context.Context, userLoginData domain.Account
 			return res, err
 		}
 
-		res, err = u.userRepository.Create(ctx, user_info_domain.User{
+		res, err = u.userRepository.Create(ctx, user_domain.User{
 			Id:       id,
 			UserName: userLoginData.Username,
 			Version:  1,

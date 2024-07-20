@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/http/httputil"
+
+	"github.com/gorilla/websocket"
 )
 
 func HandleWithSecurity(ctx context.Context, router *http.ServeMux, routerGroup string, httpMethod string, relativePath string, logger *logger.Logger, security bool, handlerFunc func(http.ResponseWriter, *http.Request)) {
@@ -79,6 +81,12 @@ func LogRequestHandler(h http.Handler, logger *logger.Logger) http.Handler {
 			return
 		}
 		log.Println(fmt.Sprintf("%q", x))
+
+		if websocket.IsWebSocketUpgrade(r) {
+			h.ServeHTTP(w, r)
+			return
+		}
+
 		rec := httptest.NewRecorder()
 		h.ServeHTTP(rec, r)
 		log.Println(fmt.Sprintf("%q", rec.Body))
