@@ -34,13 +34,7 @@ func NewAccountRepository(db *gorm.DB, table string, logger *logger.Logger, toAr
 }
 
 func (r *AccountRepository) Insert(ctx context.Context, dt domain.Account) (int64, error) {
-	db := r.db
-
-	tx, exist := ctx.Value("tx").(*gorm.DB)
-	if exist {
-		db = tx
-	}
-
+	db := sql.GetTx(ctx, r.db)
 	qr, params, err := sql.BuildToInsert(db, r.table, dt, r.buildParam, r.modelType)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
@@ -54,7 +48,7 @@ func (r *AccountRepository) Insert(ctx context.Context, dt domain.Account) (int6
 	return 1, nil
 }
 
-func (r *AccountRepository) InTransaction(ctx context.Context, ex func(db *gorm.DB) (int64, error)) (int64, error) {
+func (r *AccountRepository) InTransaction(ctx context.Context, ex func(ctx context.Context, db *gorm.DB) (int64, error)) (int64, error) {
 	return sql.ExecuteTx(ctx, r.db, ex)
 }
 

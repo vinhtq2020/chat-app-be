@@ -137,7 +137,7 @@ func BuildToInsert(db *gorm.DB, table string, obj interface{}, buildParam func(i
 	return stmt, params, nil
 }
 
-func Exists(arr []string, item string) bool {
+func exists(arr []string, item string) bool {
 	for _, v := range arr {
 		if item == v {
 			return true
@@ -152,7 +152,7 @@ func BuildToPatch(db *gorm.DB, table string, params map[string]interface{}, keys
 	i := 1
 	where := []string{}
 	for k, v := range params {
-		if Exists(keys, k) {
+		if exists(keys, k) {
 			setValue = append(setValue, v)
 			where = append(where, fmt.Sprintf("%v=%v", k, buildParam(i)))
 			i++
@@ -261,7 +261,7 @@ func StructScan(src interface{}, columnIndexes []string, toArray pq.Array) (r []
 	return r, err
 }
 
-func ExecuteTx(ctx context.Context, db *gorm.DB, ex func(tx *gorm.DB) (int64, error)) (int64, error) {
+func ExecuteTx(ctx context.Context, db *gorm.DB, ex func(ctx context.Context, tx *gorm.DB) (int64, error)) (int64, error) {
 	tx := db.Begin()
 	ctx = context.WithValue(ctx, "tx", tx)
 	defer func() {
@@ -274,7 +274,7 @@ func ExecuteTx(ctx context.Context, db *gorm.DB, ex func(tx *gorm.DB) (int64, er
 		return -1, err
 	}
 
-	res, err := ex(tx)
+	res, err := ex(ctx, tx)
 	if err != nil {
 		tx.Rollback()
 		return -1, err

@@ -2,13 +2,16 @@ package delivery
 
 import (
 	"go-service/internal/notification/domain"
+	"go-service/internal/utils/search"
 	"go-service/pkg/logger"
+	"go-service/pkg/response"
 	"net/http"
 
 	"github.com/gorilla/websocket"
 )
 
 type NotificationHandler struct {
+	service    domain.NotificationService
 	clients    map[string]map[domain.Client]bool
 	broastcast chan domain.Message
 	upgrader   *websocket.Upgrader
@@ -22,6 +25,18 @@ func NewNotificationHandler(upgrader *websocket.Upgrader, broastcast chan domain
 		broastcast: broastcast,
 		clients:    make(map[string]map[domain.Client]bool),
 	}
+}
+
+func (h *NotificationHandler) Search(w http.ResponseWriter, r *http.Request) {
+	var filter domain.NotificationFilter
+	err := search.Bind(r, &filter)
+	if err != nil {
+		response.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+
+	filter.Visible = true
+	h.service.Search(r.Context(), filter)
 }
 
 func (h *NotificationHandler) ServeWs(w http.ResponseWriter, r *http.Request) {

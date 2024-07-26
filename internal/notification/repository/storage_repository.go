@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"go-service/internal/notification/domain"
 	domain_notification "go-service/internal/notification/domain"
 	sql "go-service/pkg/database/postgres"
 	"go-service/pkg/database/postgres/pq"
@@ -33,6 +34,40 @@ func NewNotificationRepository(table string, buildParam func(int) string, db *go
 	}
 }
 
+func (r *notificationRepository) Search(ctx context.Context, filter domain.NotificationFilter) ([]domain.Notification, error) {
+	list := []domain.Notification{}
+	qr, params := r.buildQuery(filter)
+	db := sql.GetTx(ctx, r.db)
+	err := sql.QueryWithArray(db, &list, qr, r.toArray, params)
+	if err != nil {
+		r.logger.LogError(err.Error(), nil)
+		return nil, err
+	}
+	return list, nil
+}
+
+func (r *notificationRepository) buildQuery(filter domain.NotificationFilter) (string, []interface{}) {
+	qr := "select * from " + r.table
+
+	params := []interface{}{}
+	filterClause := "where"
+	if filter.CreatedFrom != nil {
+		params = append(params, filter.CreatedFrom)
+		filterClause = filterClause + fmt.Sprintf("created_at >= %s", r.buildParam(len(params)))
+	}
+
+	if filter.CreatedTo != nil {
+		params = append(params, filter.CreatedTo)
+		filterClause = filterClause + fmt.Sprintf("created_at <= %s", r.buildParam(len(params)))
+	}
+	if filter.SubscriberId != nil {
+		params = append(params, filter.SubscriberId)
+		filterClause = filterClause + fmt.Sprintf(`Subscriber @> '{"subscriber_id": %s}'`, r.buildParam(len(params)))
+	}
+	filterClause = fmt.Sprintf("%s %s and 1 = 1", qr, filterClause)
+	return filterClause, params
+}
+
 func (r *notificationRepository) Total(ctx context.Context, clientID string) (int64, error) {
 	var total int64
 	qr := "Select count(*) from %s where userId = %s"
@@ -50,14 +85,17 @@ func (r *notificationRepository) TotalUnread(ctx context.Context, clientID strin
 }
 
 func (r *notificationRepository) Insert(ctx context.Context, notification domain_notification.Notification) (int64, error) {
-	qr, param, err := sql.BuildToInsert(r.db, r.table, notification, r.buildParam, r.modelType)
+	db := sql.GetTx(ctx, r.db)
+	qr, param, err := sql.BuildToInsert(db, r.table, notification, r.buildParam, r.modelType)
 	if err != nil {
+		r.logger.LogError(err.Error(), nil)
 		return -1, err
 	}
 
-	res, err := sql.Exec(r.db, qr, param...)
+	res, err := sql.Exec(db, qr, param...)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
+		return -1, err
 	}
 	return res, err
 }

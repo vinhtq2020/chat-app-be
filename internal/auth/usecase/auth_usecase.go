@@ -113,7 +113,7 @@ func (u *AuthUsecase) Login(ctx context.Context, email string, password string, 
 	}
 
 	token := jwt.GenerateTokens(userInfo.Id, u.secretKey, jwt.AccessTokenDuration, jwt.RefreshTokenDuration)
-	_, err = u.refreshTokenRepository.InTransaction(ctx, func(db *gorm.DB) (int64, error) {
+	_, err = u.refreshTokenRepository.InTransaction(ctx, func(ctx context.Context, db *gorm.DB) (int64, error) {
 		res, err := u.refreshTokenRepository.Delete(ctx, token.UserId, ipAdress, deviceId, userAgent)
 		if err != nil {
 			return res, err
@@ -163,7 +163,7 @@ func (u *AuthUsecase) Register(ctx context.Context, userLoginData domain.Account
 	userLoginData.UpdatedAt = &currentTime
 	userLoginData.Version = 1
 
-	res, err := u.accountRepository.InTransaction(ctx, func(tx *gorm.DB) (int64, error) {
+	res, err := u.accountRepository.InTransaction(ctx, func(ctx context.Context, tx *gorm.DB) (int64, error) {
 		res, err := u.accountRepository.Insert(ctx, userLoginData)
 		if err != nil {
 			return res, err

@@ -36,7 +36,7 @@ func NewRefreshTokenRepository(db *gorm.DB, table string, logger *logger.Logger,
 	}
 }
 
-func (r *RefreshTokenRepository) InTransaction(ctx context.Context, ex func(db *gorm.DB) (int64, error)) (int64, error) {
+func (r *RefreshTokenRepository) InTransaction(ctx context.Context, ex func(ctx context.Context, db *gorm.DB) (int64, error)) (int64, error) {
 	return sql.ExecuteTx(ctx, r.db, ex)
 }
 

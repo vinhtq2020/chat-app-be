@@ -13,6 +13,7 @@ type User struct {
 	FirstName  *string    `json:"email,omitempty" gorm:"column:first_name"`
 	LastName   *string    `json:"lastName,omitempty" gorm:"column:last_name"`
 	MiddleName *string    `json:"middleName,omitempty" gorm:"column:middle_name"`
+	AvatarURL  *string    `json:"avatarURL,omitempty" gorm:"column:avatar_url"`
 	BirthDate  *time.Time `json:"birthDate,omitempty" gorm:"column:birth_date"`
 	CreatedAt  *time.Time `json:"createdAt,omitempty" gorm:"column:created_at"`
 	CreatedBy  *time.Time `json:"createdBy,omitempty" gorm:"column:created_by"`

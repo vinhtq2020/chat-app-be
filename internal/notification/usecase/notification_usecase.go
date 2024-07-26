@@ -19,7 +19,11 @@ func NewNotificationService(storageRepository domain_notification.NotificationRe
 	}
 }
 
-func (sv *notificationService) Notify(ctx context.Context, generateId func() string, requestorId string, content string, subscriberIds []string) (int64, error) {
+func (sv *notificationService) Search(ctx context.Context, filter domain.NotificationFilter) ([]domain.Notification, error) {
+	return sv.storageRepository.Search(ctx, filter)
+}
+
+func (sv *notificationService) Notify(ctx context.Context, generateId func() string, requester domain.Requester, title string, content string, subscriberIds []string, url *string, notificationType string) (int64, error) {
 	var subscribers []domain_notification.Subscriber
 	for _, v := range subscriberIds {
 		subscribers = append(subscribers, domain_notification.Subscriber{
@@ -31,22 +35,28 @@ func (sv *notificationService) Notify(ctx context.Context, generateId func() str
 
 	notification := domain_notification.Notification{
 		Id:          generateId(),
-		RequestorId: requestorId,
-		Subscribers: subscribers,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		Requester:   requester,
+		Title:       title,
 		Content:     content,
+		Subscribers: subscribers,
+		Type:        notificationType,
+		URL:         url,
+		CreatedAt:   time.Now(),
+		CreatedBy:   requester.Id,
+		UpdatedAt:   time.Now(),
+		UpdatedBy:   requester.Id,
+		Visible:     true,
 	}
 
-	// res, err := sv.storageRepository.Insert(ctx, notification)
-	// if err != nil {
-	// 	return -1, err
-	// }
+	res, err := sv.storageRepository.Insert(ctx, notification)
+	if err != nil {
+		return -1, err
+	}
 
 	sv.broastcast <- domain.Message{
 		Name: "notified",
 		Data: notification,
 	}
-	return 1, nil
+	return res, nil
 
 }

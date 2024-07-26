@@ -54,7 +54,6 @@ type App struct {
 }
 
 func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, configs configs.Config, logger *logger.Logger) (*App, error) {
-
 	db, err := postgres.NewPostgresDb(configs.PostgresConfig.DSN)
 	if err != nil {
 		return nil, err
@@ -66,11 +65,9 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	validator := validator.New(validator.WithRequiredStructEnabled())
 	validator.RegisterTagNameFunc(func(fld reflect.StructField) string {
 		name := strings.SplitN(fld.Tag.Get("json"), ",", 2)[0]
-
 		if name == "-" {
 			return ""
 		}
-
 		return name
 	})
 	validate := validate.NewValidate(validator)
@@ -86,7 +83,9 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 
 	auth := auth.NewAuthTransport(db, validate, logger, configs.AccessTokenSecretKey, toArray)
 	room := room.NewRoomTransport(db, sequenceService.Next, upgrader, logger, toArray)
-	user := user.NewUserTransport(db, logger, toArray)
+
+	userRepository := user.NewUserRepository(db, logger, toArray)
+	user := user.NewUserTransport(db, userRepository, toArray)
 	querySearch := querysearch.NewQuerySearch(logger, rdb)
 
 	aggregatorService := aggregator.NewAggregatorService(mongoDB, "querySearch", logger)
@@ -100,7 +99,6 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	logCron.AddJob(scheduler, cron.JobFunc(func() { autocomplete.AggeratedData(ctx, aggregatorService, workerService, rdb, logger) }))
 	go logCron.Start()
 
-	// start listensing for incoming chat message
 	go room.HandleMessages()
 
 	broastcast := make(chan domain.Message)
@@ -109,7 +107,7 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	go notification.HandleMessages()
 	searchTool := search_tool.NewSearchToolTransport(db, postgres.BuildParam, logger, toArray)
 
-	friend := friend.NewFriendHandler(db, notificationService, logger)
+	friend := friend.NewFriendHandler(db, userRepository, notificationService, logger)
 	return &App{
 		Auth:         auth,
 		User:         user,

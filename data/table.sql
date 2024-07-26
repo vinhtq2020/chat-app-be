@@ -70,7 +70,7 @@ create table if not exists refresh_tokens (
     device_id varchar(255),
     user_agent varchar(255),
     ip_address varchar(255),
-    refresh_token varchar(255),
+    token varchar(255),
     expiry int8,
     created_at TIMESTAMPTZ,
     updated_at TIMESTAMPTZ,
@@ -84,12 +84,17 @@ create table if not exists refresh_tokens (
 
 create table if not exists notifications(
     id varchar(255),
-    requestor_id varchar(255),
+    requester jsonb,
     subscribers jsonb[],
-    is_read boolean,
+    title varchar(255),
     content VARCHAR(255),
+    type VARCHAR(255),
+    url VARCHAR(255),
     created_at TIMESTAMPTZ,
+    created_by VARCHAR(255),
     updated_at TIMESTAMPTZ,
+    updated_by VARCHAR(255),
+    visible BOOLEAN,
     primary key(id) 
 );
 
