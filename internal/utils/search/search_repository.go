@@ -21,14 +21,14 @@ func NewSearchRepository(table string, db *gorm.DB, toArray pq.Array) *searchRep
 
 func (f *searchRepository) Search(ctx context.Context, result interface{}, filter SearchFilter) error {
 	params, qr := BuildQuery(f.table, filter)
-	err := sql.QueryWithArray(f.db, result, qr, f.toArray, params...)
+	err := sql.QueryWithArray(f.db, result, qr, f.toArray, nil, params...)
 	return err
 }
 
 func (f *searchRepository) Total(ctx context.Context) (int64, error) {
 	total := int64(0)
 	qr := fmt.Sprintf("select count(*) from %s", f.table)
-	err := sql.Query(f.db, qr, &total)
+	err := sql.Query(f.db, qr, &total, nil)
 	if err != nil {
 		return 0, err
 	}

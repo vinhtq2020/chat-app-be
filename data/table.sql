@@ -62,7 +62,8 @@ create table if not exists friend_requests (
     created_at TIMESTAMPTZ,
     created_by varchar(255),
     updated_at TIMESTAMPTZ,
-    updated_by varchar(255)
+    updated_by varchar(255),
+    notification_id VARCHAR(255)
 );
 
 create table if not exists refresh_tokens (
@@ -94,7 +95,7 @@ create table if not exists notifications(
     created_by VARCHAR(255),
     updated_at TIMESTAMPTZ,
     updated_by VARCHAR(255),
-    visible BOOLEAN,
+    deleted BOOLEAN,
     primary key(id) 
 );
 

@@ -7,13 +7,17 @@ import (
 	"errors"
 	"fmt"
 	"go-service/pkg/database/postgres/pq"
+	"go-service/pkg/logger"
 	"reflect"
 	"strings"
 
 	"gorm.io/gorm"
 )
 
-func Query(db *gorm.DB, sql string, result interface{}, value ...interface{}) error {
+func Query(db *gorm.DB, sql string, result interface{}, logger *logger.Logger, value ...interface{}) error {
+	if logger != nil {
+		logger.LogError(fmt.Sprintf("%v %v", sql, value), nil)
+	}
 	err := db.Raw(sql, value...).Scan(&result).Error
 	return err
 }
@@ -21,7 +25,10 @@ func Query(db *gorm.DB, sql string, result interface{}, value ...interface{}) er
 func QueryWithArray(db *gorm.DB, results interface{}, sql string, toArray func(a interface{}) interface {
 	driver.Valuer
 	sql.Scanner
-}, value ...interface{}) error {
+}, logger *logger.Logger, value ...interface{}) error {
+	if logger != nil {
+		logger.LogInfo(fmt.Sprintf("%v %v", sql, value), nil)
+	}
 	// pointer => array => item
 	modelType := reflect.TypeOf(results).Elem().Elem()
 
@@ -69,7 +76,10 @@ func ArrayAppend(array interface{}, item interface{}) interface{} {
 	return array
 }
 
-func Exec(db *gorm.DB, sql string, value ...interface{}) (int64, error) {
+func Exec(db *gorm.DB, sql string, logger *logger.Logger, value ...interface{}) (int64, error) {
+	if logger != nil {
+		logger.LogInfo(fmt.Sprintf("%v %v", sql, value), nil)
+	}
 	tx := db.Exec(sql, value...)
 	return tx.RowsAffected, tx.Error
 }
@@ -146,19 +156,37 @@ func exists(arr []string, item string) bool {
 	return false
 }
 
-func BuildToPatch(db *gorm.DB, table string, params map[string]interface{}, keys []string, buildParam func(int) string) (string, []interface{}, error) {
+func BuildToPatch(db *gorm.DB, table string, modelType reflect.Type, params map[string]interface{}, keys []string, buildParam func(int) string) (string, []interface{}, error) {
+	cols := map[string]string{}
+	for i := 0; i < modelType.NumField(); i++ {
+		col := getTagChild(modelType.Field(i).Tag.Get("gorm"), "column", true)
+		json := strings.SplitN(modelType.Field(i).Tag.Get("json"), ",", 2)[0]
+		if json == "-" {
+			continue
+		}
+
+		if len(col) > 0 && len(json) > 0 {
+			cols[json] = col
+		}
+	}
 	set := []string{}
 	setValue := []interface{}{}
 	i := 1
 	where := []string{}
+
 	for k, v := range params {
-		if exists(keys, k) {
+		colName, exist := cols[k]
+		if !exist {
+			continue
+		}
+
+		if exists(keys, colName) {
 			setValue = append(setValue, v)
-			where = append(where, fmt.Sprintf("%v=%v", k, buildParam(i)))
+			where = append(where, fmt.Sprintf("%v=%v", colName, buildParam(i)))
 			i++
 			continue
 		}
-		set = append(set, fmt.Sprintf("%v=%v", k, buildParam(i)))
+		set = append(set, fmt.Sprintf("%v=%v", colName, buildParam(i)))
 		setValue = append(setValue, v)
 		i++
 	}

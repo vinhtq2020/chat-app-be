@@ -40,7 +40,7 @@ func (r *AccountRepository) Insert(ctx context.Context, dt domain.Account) (int6
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
 	}
-	_, err = sql.Exec(db, qr, params...)
+	_, err = sql.Exec(db, qr, r.logger, params...)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
@@ -56,7 +56,7 @@ func (r *AccountRepository) Exist(ctx context.Context, email string) (int64, err
 	qr := "select count(*) from %s where email = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
 	res := int64(0)
-	err := sql.Query(r.db, stmt, &res, email)
+	err := sql.Query(r.db, stmt, &res, r.logger, email)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
@@ -69,7 +69,7 @@ func (r *AccountRepository) Load(ctx context.Context, email string) (*domain.Acc
 	var users []domain.Account
 	qr := "select * from %s where email = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
-	err := sql.QueryWithArray(r.db, &users, stmt, r.toArray, email)
+	err := sql.QueryWithArray(r.db, &users, stmt, r.toArray, r.logger, email)
 	if err != nil || len(users) == 0 {
 		r.logger.LogError(err.Error(), nil)
 		return nil, err

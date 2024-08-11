@@ -52,7 +52,7 @@ func (r *RoomRepository) All(ctx context.Context) ([]domain.Room, error) {
 	// 	}
 	// 	res = append(res, item)
 	// }
-	err := postgres.QueryWithArray(r.db, &res, qr, r.toArray)
+	err := postgres.QueryWithArray(r.db, &res, qr, r.toArray, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (r *RoomRepository) Create(ctx context.Context, room domain.Room) (int64, e
 	if err != nil {
 		return -1, err
 	}
-	res, err := postgres.Exec(r.db, qr, param...)
+	res, err := postgres.Exec(r.db, qr, nil, param...)
 	if err != nil {
 		return -1, err
 	}
@@ -76,7 +76,7 @@ func (r *RoomRepository) Create(ctx context.Context, room domain.Room) (int64, e
 func (r *RoomRepository) Delete(ctx context.Context, id string) (int64, error) {
 	qr := "Delete from %s where id = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
-	res, err := postgres.Exec(r.db, stmt, id)
+	res, err := postgres.Exec(r.db, stmt, nil, id)
 	return res, err
 }
 
@@ -85,7 +85,7 @@ func (r *RoomRepository) Load(ctx context.Context, id string) (*domain.Room, err
 	var res []domain.Room
 	qr := "select * from %s where id = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
-	err := postgres.QueryWithArray(r.db, &res, stmt, r.toArray, id)
+	err := postgres.QueryWithArray(r.db, &res, stmt, r.toArray, nil, id)
 	if err != nil || len(res) == 0 {
 		return nil, err
 	}
@@ -94,11 +94,11 @@ func (r *RoomRepository) Load(ctx context.Context, id string) (*domain.Room, err
 
 // Patch implements domain.RoomRepository.
 func (r *RoomRepository) Patch(ctx context.Context, room map[string]interface{}) (int64, error) {
-	qr, vals, err := postgres.BuildToPatch(r.db, r.table, room, r.primaryKeys, r.buildParam)
+	qr, vals, err := postgres.BuildToPatch(r.db, r.table, r.modelType, room, r.primaryKeys, r.buildParam)
 	if err != nil {
 		return -1, err
 	}
-	res, err := postgres.Exec(r.db, qr, vals...)
+	res, err := postgres.Exec(r.db, qr, nil, vals...)
 	if err != nil {
 		return -1, err
 	}

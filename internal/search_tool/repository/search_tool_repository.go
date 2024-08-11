@@ -40,7 +40,7 @@ func (r *SearchToolRepository) Search(ctx context.Context, id string, filter dom
 					where a.user_name like CONCAT('%%',%s::text,'%%')`
 
 	stmt := fmt.Sprintf(qr, r.buildParam(1), r.buildParam(2))
-	err := sql.QueryWithArray(r.DB, &res, stmt, r.toArray, id, filter.Q)
+	err := sql.QueryWithArray(r.DB, &res, stmt, r.toArray, r.logger, id, filter.Q)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 	}

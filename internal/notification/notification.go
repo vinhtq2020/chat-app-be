@@ -13,8 +13,8 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewNotificationHandler(upgrader websocket.Upgrader, broastcast chan domain.Message, logger *logger.Logger) domain_notification.NotificacationTransport {
-	handler := delivery.NewNotificationHandler(&upgrader, broastcast, logger)
+func NewNotificationHandler(upgrader websocket.Upgrader, service domain.NotificationService, broastcast chan domain.Message, logger *logger.Logger) domain_notification.NotificacationTransport {
+	handler := delivery.NewNotificationHandler(&upgrader, service, broastcast, logger)
 	return handler
 }
 

@@ -1,10 +1,20 @@
 package domain
 
-import "github.com/gorilla/websocket"
+import (
+	"github.com/gorilla/websocket"
+)
+
+type NotificationMessage string
+
+const (
+	NOTIFIED NotificationMessage = "notified"
+	UPDATED  NotificationMessage = "updated"
+	READ     NotificationMessage = "read"
+)
 
 type Message struct {
-	Name string      `json:"name"`
-	Data interface{} `json:"data"`
+	Name NotificationMessage `json:"name"`
+	Data any                 `json:"data"`
 }
 
 type Client struct {

@@ -29,7 +29,7 @@ func NewUserRepository(db *gorm.DB, table string, logger *logger.Logger, toArray
 func (r *UserRepository) Load(ctx context.Context, id string) (*user_domain.User, error) {
 	var res []user_domain.User
 	stmt := fmt.Sprintf("select * from %s where id = %s", r.table, r.buildParam(1))
-	err := postgres.QueryWithArray(r.db, &res, stmt, r.toArray, id)
+	err := postgres.QueryWithArray(r.db, &res, stmt, r.toArray, r.logger, id)
 	if err != nil || len(res) == 0 {
 		r.logger.LogError(err.Error(), nil)
 		return nil, err
@@ -46,7 +46,7 @@ func (r *UserRepository) Create(ctx context.Context, user user_domain.User) (int
 	if err != nil {
 		return -1, err
 	}
-	res, err := sql.Exec(r.db, qr, params...)
+	res, err := sql.Exec(r.db, qr, r.logger, params...)
 	return res, err
 }
 
@@ -54,7 +54,7 @@ func (r *UserRepository) Exist(ctx context.Context, id string) (bool, error) {
 	qr := "select count(*) from %s where id = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
 	res := int64(0)
-	err := sql.Query(r.db, stmt, &res, id)
+	err := sql.Query(r.db, stmt, &res, r.logger, id)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return false, err

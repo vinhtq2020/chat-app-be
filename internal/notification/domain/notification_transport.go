@@ -4,5 +4,6 @@ import "net/http"
 
 type NotificacationTransport interface {
 	ServeWs(w http.ResponseWriter, r *http.Request)
+	Search(w http.ResponseWriter, r *http.Request)
 	HandleMessages()
 }

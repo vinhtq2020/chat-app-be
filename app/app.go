@@ -103,11 +103,11 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 
 	broastcast := make(chan domain.Message)
 	notificationService := notification.NewNotificationService(db, broastcast, logger, postgres.BuildParam, toArray)
-	notification := notification.NewNotificationHandler(upgrader, broastcast, logger)
+	notification := notification.NewNotificationHandler(upgrader, notificationService, broastcast, logger)
 	go notification.HandleMessages()
 	searchTool := search_tool.NewSearchToolTransport(db, postgres.BuildParam, logger, toArray)
 
-	friend := friend.NewFriendHandler(db, userRepository, notificationService, logger)
+	friend := friend.NewFriendHandler(db, userRepository, notificationService, logger, postgres.BuildParam)
 	return &App{
 		Auth:         auth,
 		User:         user,

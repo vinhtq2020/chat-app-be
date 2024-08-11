@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"go-service/internal/friend/domain"
 	friend_domain "go-service/internal/friend/domain"
 	"go-service/pkg/database/postgres"
 	sql "go-service/pkg/database/postgres"
@@ -36,11 +37,22 @@ func NewRequestFriendRepository(db *gorm.DB, table string, user_table string, lo
 		modelType:  modelType,
 	}
 }
-func (r *RequestFriendRepository) Exist(ctx context.Context, userId string, friendId string) (bool, error) {
+
+func (r *RequestFriendRepository) Load(ctx context.Context, requestId string) (*domain.FriendRequest, error) {
+	var frq domain.FriendRequest
+	stmt := fmt.Sprintf("select * from %s where id = %s", r.table, r.buildParam(1))
+	err := sql.Query(r.db, stmt, &frq, nil, requestId)
+	if err != nil {
+		return nil, err
+	}
+	return &frq, nil
+}
+
+func (r *RequestFriendRepository) Exist(ctx context.Context, requesterId string, requesteeId string) (bool, error) {
 	qr := "select count(*) from %s where requester_id = %s and requestee_id = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1), r.buildParam(2))
 	var res int64
-	err := sql.Query(r.db, stmt, &res, userId, friendId)
+	err := sql.Query(r.db, stmt, &res, r.logger, requesterId, requesteeId)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return false, err
@@ -52,18 +64,19 @@ func (r *RequestFriendRepository) All(ctx context.Context, userId string) ([]fri
 	qr := "select * from %s where requester = %s and status = %s"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1), r.buildParam(2))
 	var res []friend_domain.FriendRequest
-	err := sql.Query(r.db, stmt, &res, userId, friend_domain.StatusPending.Value())
+	err := sql.Query(r.db, stmt, &res, r.logger, userId, friend_domain.StatusPending.Value())
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return nil, err
 	}
 	return res, nil
 }
+
 func (r *RequestFriendRepository) Total(ctx context.Context) (int64, error) {
 	qr := "select count(*) from %s"
 	stmt := fmt.Sprintf(qr, r.table)
 	var res int64
-	err := sql.Query(r.db, stmt, &res)
+	err := sql.Query(r.db, stmt, &res, r.logger)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
@@ -78,7 +91,7 @@ func (r *RequestFriendRepository) Create(ctx context.Context, friendRq friend_do
 		return -1, err
 	}
 
-	res, err := postgres.Exec(db, qr, params...)
+	res, err := postgres.Exec(db, qr, r.logger, params...)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
@@ -87,12 +100,12 @@ func (r *RequestFriendRepository) Create(ctx context.Context, friendRq friend_do
 }
 func (r *RequestFriendRepository) Patch(ctx context.Context, friendRq map[string]interface{}) (int64, error) {
 	db := sql.GetTx(ctx, r.db)
-	qr, params, err := sql.BuildToPatch(r.db, r.table, friendRq, r.keys, r.buildParam)
+	qr, params, err := sql.BuildToPatch(r.db, r.table, r.modelType, friendRq, r.keys, r.buildParam)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
 	}
-	_, err = sql.Exec(db, qr, params...)
+	_, err = sql.Exec(db, qr, r.logger, params...)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err

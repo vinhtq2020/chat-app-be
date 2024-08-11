@@ -2,7 +2,6 @@ package delivery
 
 import (
 	"encoding/json"
-	"go-service/internal/friend/domain"
 	friend_domain "go-service/internal/friend/domain"
 	"go-service/pkg/logger"
 	"go-service/pkg/response"
@@ -20,7 +19,7 @@ func NewFriendHandler(service friend_domain.FriendService, logger *logger.Logger
 }
 
 func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var friendRequest domain.FriendRequest
+	var friendRequest friend_domain.FriendRequest
 
 	userId, ok := r.Context().Value("userId").(string)
 	if !ok {
@@ -36,12 +35,12 @@ func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(friendRequest.RequesteeId) > 0 && len(userId) > 0 {
-
 		friendRequest.CreatedAt = time.Now()
 		friendRequest.CreatedBy = userId
 		friendRequest.UpdatedAt = time.Now()
 		friendRequest.UpdatedBy = userId
 		friendRequest.RequesterId = userId
+
 		res, err := h.friendService.SendFriendRequest(r.Context(), friendRequest)
 		handleResponse(w, res, err)
 	} else {
@@ -50,38 +49,23 @@ func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *FriendHandler) Patch(w http.ResponseWriter, r *http.Request) {
-	friendRequest := map[string]interface{}{}
-	userId, ok := r.Context().Value("userId").(*string)
-	if !ok {
-		response.Response(w, http.StatusBadRequest, nil)
-	}
+func (h *FriendHandler) UpdateRequestStatus(w http.ResponseWriter, r *http.Request) {
+	requestId := r.PathValue("id")
+	action := r.PathValue("action")
 
-	err := json.NewDecoder(r.Body).Decode(&friendRequest)
-	if err != nil {
+	if len(requestId) == 0 && len(action) == 0 && action != "accept" && action != "reject" {
 		response.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	id := r.PathValue("id")
-	if len(id) == 0 {
-		response.Response(w, http.StatusBadRequest, nil)
-		return
-	}
+	// friendRequest["id"] = requestId
+	// friendRequest["requesteeId"] = userId
+	// friendRequest["action"] = action
+	// friendRequest["updatedAt"] = time.Now()
+	// friendRequest["updatedBy"] = userId
 
-	if _, exits := friendRequest["action"]; !exits {
-		response.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	friendRequest["id"] = id
-	friendRequest["requesterId"] = userId
-	friendRequest["updatedAt"] = time.Now()
-	friendRequest["updatedBy"] = userId
-
-	res, err := h.friendService.Patch(r.Context(), friendRequest)
+	res, err := h.friendService.UpdateFriendRequest(r.Context(), requestId, action)
 	handleResponse(w, res, err)
-
 }
 
 func handleResponse(w http.ResponseWriter, res int64, err error) {

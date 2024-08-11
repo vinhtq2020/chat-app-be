@@ -63,7 +63,7 @@ func (v *AuthValidator) ValidateRegister(ctx context.Context, user domain.Accoun
 						FROM %s 
 						WHERE phone = $3`, v.table, v.table, v.table)
 	res := []domain.ExistingField{}
-	err := sql.QueryWithArray(v.db, &res, qr, v.toArray, user.Email, user.Username, user.Phone)
+	err := sql.QueryWithArray(v.db, &res, qr, v.toArray, v.logger, user.Email, user.Username, user.Phone)
 	if err != nil {
 		v.logger.LogError(err.Error(), nil)
 		return nil, err

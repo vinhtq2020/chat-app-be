@@ -44,7 +44,7 @@ func (r *RefreshTokenRepository) Load(ctx context.Context, userAgent string, ip 
 	var res []domain.RefreshToken
 	db := sql.GetTx(ctx, r.db)
 	qr := fmt.Sprintf("select * from %s where user_agent = %s and ip_address = %s and device_id = %s", r.table, r.buildParam(1), r.buildParam(2), r.buildParam(3))
-	err := sql.QueryWithArray(db, &res, qr, r.toArray, userAgent, ip, deviceId)
+	err := sql.QueryWithArray(db, &res, qr, r.toArray, r.logger, userAgent, ip, deviceId)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return nil, err
@@ -64,7 +64,7 @@ func (r *RefreshTokenRepository) Insert(ctx context.Context, refreshToken domain
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
 	}
-	_, err = sql.Exec(db, qr, params...)
+	_, err = sql.Exec(db, qr, r.logger, params...)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
@@ -74,13 +74,13 @@ func (r *RefreshTokenRepository) Insert(ctx context.Context, refreshToken domain
 
 func (r *RefreshTokenRepository) Patch(ctx context.Context, refreshToken map[string]interface{}) (int64, error) {
 	db := sql.GetTx(ctx, r.db)
-	qr, params, err := sql.BuildToPatch(db, r.table, refreshToken, r.primaryKeys, r.buildParam)
+	qr, params, err := sql.BuildToPatch(db, r.table, r.modelType, refreshToken, r.primaryKeys, r.buildParam)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
 	}
 
-	_, err = sql.Exec(db, qr, params...)
+	_, err = sql.Exec(db, qr, r.logger, params...)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err
@@ -91,7 +91,7 @@ func (r *RefreshTokenRepository) Patch(ctx context.Context, refreshToken map[str
 func (r *RefreshTokenRepository) Delete(ctx context.Context, userId string, ipAddress string, deviceId string, userAgent string) (int64, error) {
 	db := sql.GetTx(ctx, r.db)
 	qr := fmt.Sprintf("delete from %s where user_id = $1 and ip_address = $2 and device_id = $3 and user_agent = $4", r.table)
-	res, err := sql.Exec(db, qr, userId, ipAddress, deviceId, userAgent)
+	res, err := sql.Exec(db, qr, r.logger, userId, ipAddress, deviceId, userAgent)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return -1, err

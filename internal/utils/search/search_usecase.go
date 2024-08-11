@@ -8,7 +8,7 @@ type searchUsecase[T any] struct {
 	repo SearchRepository
 }
 
-func NewSearchService[T any](repo SearchRepository, buildFilter func() string) *searchUsecase[T] {
+func NewSearchService[T any](repo SearchRepository) *searchUsecase[T] {
 	return &searchUsecase[T]{
 		repo: repo,
 	}

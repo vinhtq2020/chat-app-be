@@ -51,13 +51,13 @@ func (r *SequenceRepository) Next(ctx context.Context, module string) (int64, er
 		"insert into %s as s values(%s, 1) on conflict(%s) do update set %s = s.%s + 1 where s.%s = %s",
 		r.table, r.buildParams(1), r.nameCol, r.sequenceCol, r.sequenceCol, r.nameCol, r.buildParams(1))
 
-	return sql.Exec(r.db, qr, module)
+	return sql.Exec(r.db, qr, nil, module)
 }
 
 func (r *SequenceRepository) GetSequence(ctx context.Context, module string) (int64, error) {
 	var sequence domain.Sequence
 	qr := fmt.Sprintf("select * from %s where name = %s", r.table, r.buildParams(1))
-	err := sql.Query(r.db, qr, &sequence, module)
+	err := sql.Query(r.db, qr, &sequence, nil, module)
 	if err != nil {
 		return -1, err
 	}

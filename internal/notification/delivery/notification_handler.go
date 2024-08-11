@@ -18,12 +18,13 @@ type NotificationHandler struct {
 	logger     *logger.Logger
 }
 
-func NewNotificationHandler(upgrader *websocket.Upgrader, broastcast chan domain.Message, logger *logger.Logger) *NotificationHandler {
+func NewNotificationHandler(upgrader *websocket.Upgrader, service domain.NotificationService, broastcast chan domain.Message, logger *logger.Logger) *NotificationHandler {
 	return &NotificationHandler{
 		upgrader:   upgrader,
 		logger:     logger,
 		broastcast: broastcast,
 		clients:    make(map[string]map[domain.Client]bool),
+		service:    service,
 	}
 }
 
@@ -35,8 +36,12 @@ func (h *NotificationHandler) Search(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	filter.Visible = true
-	h.service.Search(r.Context(), filter)
+	list, err := h.service.Search(r.Context(), filter)
+	if err != nil {
+		response.Response(w, http.StatusInternalServerError, err)
+		return
+	}
+	response.Response(w, http.StatusOK, list)
 }
 
 func (h *NotificationHandler) ServeWs(w http.ResponseWriter, r *http.Request) {
@@ -83,7 +88,32 @@ func (h *NotificationHandler) HandleMessages() {
 	for {
 		msg := <-h.broastcast
 		switch msg.Name {
-		case "notified":
+		case domain.NOTIFIED:
+			for _, subscriber := range msg.Data.(domain.Notification).Subscribers {
+				if _, ok := h.clients[subscriber.Id]; ok {
+					for client := range h.clients[subscriber.Id] {
+						err := client.Conn.WriteJSON(msg)
+						if err != nil {
+							client.Conn.Close()
+							delete(h.clients, client.UserId)
+						}
+					}
+				}
+			}
+
+		case domain.UPDATED:
+			for _, subscriber := range msg.Data.(domain.Notification).Subscribers {
+				if _, ok := h.clients[subscriber.Id]; ok {
+					for client := range h.clients[subscriber.Id] {
+						err := client.Conn.WriteJSON(msg)
+						if err != nil {
+							client.Conn.Close()
+							delete(h.clients, client.UserId)
+						}
+					}
+				}
+			}
+		case domain.READ:
 			for _, subscriber := range msg.Data.(domain.Notification).Subscribers {
 				if _, ok := h.clients[subscriber.Id]; ok {
 					for client := range h.clients[subscriber.Id] {
