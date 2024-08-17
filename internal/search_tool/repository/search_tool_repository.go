@@ -32,15 +32,15 @@ func (r *SearchToolRepository) Search(ctx context.Context, id string, filter dom
 	var res []domain.SearchItem
 	qr := `select a.id, a.user_name, a.avatar_url,
 					case 
-						when b.user_id1 <> NULL and b.user_id2 <> NULL then b.status
 						when a.id = %s then NULL
+						when b.user_id1 is not NULL and b.user_id2 is not NULL then b.status
 						else 'none'
 					end as friend_status
-					from users a left join friends b on (a.id = user_id1 or a.id = user_id2)
+					from users a left join friends b on (a.id = b.user_id1 or a.id = b.user_id2)
 					where a.user_name like CONCAT('%%',%s::text,'%%')`
 
 	stmt := fmt.Sprintf(qr, r.buildParam(1), r.buildParam(2))
-	err := sql.QueryWithArray(r.DB, &res, stmt, r.toArray, r.logger, id, filter.Q)
+	err := sql.QueryWithArray(r.DB, &res, stmt, r.toArray, r.logger, id, *filter.Q)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 	}

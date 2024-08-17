@@ -48,11 +48,11 @@ func (r *RequestFriendRepository) Load(ctx context.Context, requestId string) (*
 	return &frq, nil
 }
 
-func (r *RequestFriendRepository) Exist(ctx context.Context, requesterId string, requesteeId string) (bool, error) {
-	qr := "select count(*) from %s where requester_id = %s and requestee_id = %s"
-	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1), r.buildParam(2))
+func (r *RequestFriendRepository) Exist(ctx context.Context, requesterId string, requesteeId string, status domain.FriendRequestStatus) (bool, error) {
+	qr := "select count(*) from %s where requester_id = %s and requestee_id = %s and status = %s"
+	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1), r.buildParam(2), r.buildParam(3))
 	var res int64
-	err := sql.Query(r.db, stmt, &res, r.logger, requesterId, requesteeId)
+	err := sql.Query(r.db, stmt, &res, r.logger, requesterId, requesteeId, status)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return false, err

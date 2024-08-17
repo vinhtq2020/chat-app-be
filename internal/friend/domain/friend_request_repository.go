@@ -9,7 +9,7 @@ import (
 type FriendRequestRepository interface {
 	All(ctx context.Context, userId string) ([]FriendRequest, error)
 	Load(ctx context.Context, friendRequestId string) (*FriendRequest, error)
-	Exist(ctx context.Context, userId string, friendId string) (bool, error)
+	Exist(ctx context.Context, userId string, friendId string, status FriendRequestStatus) (bool, error)
 	Total(ctx context.Context) (int64, error)
 	Create(ctx context.Context, friendRq FriendRequest) (int64, error)
 	Patch(ctx context.Context, friendRq map[string]interface{}) (int64, error)

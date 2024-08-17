@@ -54,8 +54,14 @@ func (u *FriendUsecase) SendFriendRequest(ctx context.Context, friendRequest dom
 	}
 
 	// check friend request exist
-	exist, err = u.friendRqRepository.Exist(ctx, friendRequest.RequesterId, friendRequest.RequesteeId)
+	exist, err = u.friendRqRepository.Exist(ctx, friendRequest.RequesterId, friendRequest.RequesteeId, friend_domain.StatusPending)
 	if err != nil || exist {
+		return -1, err
+	}
+
+	// check already friended
+	res, err := u.friendRepository.AlreadyFriended(ctx, friendRequest.RequesteeId, friendRequest.RequesterId)
+	if err != nil || res > 0 {
 		return -1, err
 	}
 
@@ -70,12 +76,19 @@ func (u *FriendUsecase) SendFriendRequest(ctx context.Context, friendRequest dom
 	friendRequest.Id = id
 	friendRequest.NotificationId = notificationId
 
-	res, err := u.friendRqRepository.InTransaction(ctx, func(ctx context.Context, db *gorm.DB) (int64, error) {
+	res, err = u.friendRqRepository.InTransaction(ctx, func(ctx context.Context, db *gorm.DB) (int64, error) {
 		res, err := u.friendRqRepository.Create(ctx, friendRequest)
 		if err != nil {
 			return res, err
 		}
-
+		res, err = u.friendRepository.Upsert(ctx, friend_domain.Friend{
+			UserId1: friendRequest.RequesterId,
+			UserId2: friendRequest.RequesteeId,
+			Status:  domain.StatusPending.Value(),
+		})
+		if err != nil {
+			return res, err
+		}
 		// Notify
 		requesterInfo, err := u.userInfoRepository.Load(ctx, friendRequest.RequesterId)
 		if err != nil {
