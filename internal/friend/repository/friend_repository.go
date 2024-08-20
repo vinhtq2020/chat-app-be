@@ -32,7 +32,7 @@ func NewFriendRepository(db *gorm.DB, logger *logger.Logger, buildParam func(int
 
 func (r *FriendRepository) AlreadyFriended(ctx context.Context, userId1 string, userId2 string) (int64, error) {
 	var res int64
-	qr := "select count(*) from %s where (user_id1 = %s and user_id2 = %s) or (user_id1 = %s and user_id2 = %s)"
+	qr := "select count(*) from %s where ((user_id1 = %s and user_id2 = %s) or (user_id1 = %s and user_id2 = %s)) and status = 'A'"
 	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1), r.buildParam(2), r.buildParam(2), r.buildParam(1))
 	err := sql.Query(r.db, stmt, &res, r.logger, userId1, userId2)
 	if err != nil {

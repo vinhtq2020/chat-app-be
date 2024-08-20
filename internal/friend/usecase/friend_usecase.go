@@ -15,10 +15,11 @@ import (
 )
 
 const (
-	addFriend         = "add_friend"
-	acceptAddFriended = "accept_add_friended"
-	acceptFriend      = "accept_add_friend"
-	rejectFriend      = "reject_add_friend"
+	addFriend        = "add_friend"
+	yourAcceptFriend = "your_accept_friend"
+	yourRejectFriend = "your_reject_friend"
+	acceptFriend     = "accept_friend"
+	rejectFriend     = "reject_friend"
 )
 
 type FriendUsecase struct {
@@ -128,8 +129,9 @@ func (u *FriendUsecase) generateId(ctx context.Context) (string, error) {
 	return fmt.Sprintf("F-%v", total), nil
 }
 
+// use for reply request from requestee to requester
 func (u *FriendUsecase) UpdateFriendRequest(ctx context.Context, requestId string, action string) (int64, error) {
-	var title, content string
+	var receiverTitle, receiverContent, senderTitle, senderContent string
 
 	// Load add friend request
 	request, err := u.friendRqRepository.Load(ctx, requestId)
@@ -146,12 +148,16 @@ func (u *FriendUsecase) UpdateFriendRequest(ctx context.Context, requestId strin
 	res, err := u.friendRqRepository.InTransaction(ctx, func(ctx context.Context, db *gorm.DB) (int64, error) {
 		if action == domain.AcceptAction {
 			request.Status = friend_domain.StatusAccept
-			title = acceptFriend
-			content = acceptFriend
+			receiverTitle = acceptFriend
+			receiverContent = acceptFriend
+			senderTitle = yourAcceptFriend
+			senderContent = yourAcceptFriend
 		} else {
 			request.Status = friend_domain.StatusReject
-			title = rejectFriend
-			content = rejectFriend
+			receiverTitle = rejectFriend
+			receiverContent = rejectFriend
+			senderTitle = yourRejectFriend
+			senderContent = yourRejectFriend
 		}
 
 		request.UpdatedBy = request.RequesteeId
@@ -173,20 +179,20 @@ func (u *FriendUsecase) UpdateFriendRequest(ctx context.Context, requestId strin
 		res, err = u.friendRepository.Upsert(ctx, friend_domain.Friend{
 			UserId1: request.RequesterId,
 			UserId2: request.RequesteeId,
-			Status:  domain.StatusAccept.Value(),
+			Status:  request.Status.Value(),
 		})
 		if err != nil {
 			return res, err
 		}
 
-		// update invite notification to success and notify to reciever
-		res, err = u.notificationService.UpdateNotify(ctx, request.NotificationId, acceptAddFriended, acceptAddFriended, request.RequesteeId, notification_domain.NotificationInform, nil, false)
+		// update invite notification to success and notify this to sender(requestee)
+		res, err = u.notificationService.UpdateNotify(ctx, request.NotificationId, senderTitle, senderContent, request.RequesteeId, notification_domain.NotificationInform, nil, false)
 		if err != nil {
 			return res, err
 		}
 
 		// notify to requester that requestee accepted
-		userInfo, err := u.userInfoRepository.Load(ctx, request.RequesterId)
+		userInfo, err := u.userInfoRepository.Load(ctx, request.RequesteeId)
 
 		if err != nil {
 			return res, err
@@ -205,7 +211,7 @@ func (u *FriendUsecase) UpdateFriendRequest(ctx context.Context, requestId strin
 
 		res, err = u.notificationService.Notify(ctx, func() string {
 			return notificationId
-		}, requester, title, content, []string{request.RequesterId}, nil, notification_domain.NotificationInform)
+		}, requester, receiverTitle, receiverContent, []string{request.RequesterId}, nil, notification_domain.NotificationInform)
 
 		return res, err
 	})

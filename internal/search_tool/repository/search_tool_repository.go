@@ -34,7 +34,7 @@ func (r *SearchToolRepository) Search(ctx context.Context, id string, filter dom
 					case 
 						when a.id = %s then NULL
 						when b.user_id1 is not NULL and b.user_id2 is not NULL then b.status
-						else 'none'
+						else NULL
 					end as friend_status
 					from users a left join friends b on (a.id = b.user_id1 or a.id = b.user_id2)
 					where a.user_name like CONCAT('%%',%s::text,'%%')`
