@@ -30,7 +30,7 @@ func NewSearchToolsRepository(DB *gorm.DB, buildParam func(int) string, toArray 
 
 func (r *SearchToolRepository) Search(ctx context.Context, id string, filter domain.SearchFilter) ([]domain.SearchItem, error) {
 	var res []domain.SearchItem
-	qr := `select a.id, a.user_name, a.avatar_url,
+	qr := `select a.id, a.user_name, a.avatar_url, b.request_id, %s as type,
 					case 
 						when a.id = %s then NULL
 						when b.user_id1 is not NULL and b.user_id2 is not NULL then b.status
@@ -39,8 +39,8 @@ func (r *SearchToolRepository) Search(ctx context.Context, id string, filter dom
 					from users a left join friends b on (a.id = b.user_id1 or a.id = b.user_id2)
 					where a.user_name like CONCAT('%%',%s::text,'%%')`
 
-	stmt := fmt.Sprintf(qr, r.buildParam(1), r.buildParam(2))
-	err := sql.QueryWithArray(r.DB, &res, stmt, r.toArray, r.logger, id, *filter.Q)
+	stmt := fmt.Sprintf(qr, r.buildParam(1), r.buildParam(2), r.buildParam(3))
+	err := sql.QueryWithArray(r.DB, &res, stmt, r.toArray, r.logger, "user", id, *filter.Q)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 	}

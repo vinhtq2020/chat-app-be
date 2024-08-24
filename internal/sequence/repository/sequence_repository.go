@@ -47,19 +47,25 @@ func NewSequenceRepository(db *gorm.DB, table string, options ...interface{}) *S
 }
 
 func (r *SequenceRepository) Next(ctx context.Context, module string) (int64, error) {
+	db := sql.GetTx(ctx, r.db)
 	qr := fmt.Sprintf(
 		"insert into %s as s values(%s, 1) on conflict(%s) do update set %s = s.%s + 1 where s.%s = %s",
 		r.table, r.buildParams(1), r.nameCol, r.sequenceCol, r.sequenceCol, r.nameCol, r.buildParams(1))
 
-	return sql.Exec(r.db, qr, nil, module)
+	return sql.Exec(db, qr, nil, module)
 }
 
 func (r *SequenceRepository) GetSequence(ctx context.Context, module string) (int64, error) {
+	db := sql.GetTx(ctx, r.db)
 	var sequence domain.Sequence
 	qr := fmt.Sprintf("select * from %s where name = %s", r.table, r.buildParams(1))
-	err := sql.Query(r.db, qr, &sequence, nil, module)
+	err := sql.Query(db, qr, &sequence, nil, module)
 	if err != nil {
 		return -1, err
 	}
 	return sequence.SequenceNo, nil
+}
+
+func (r *SequenceRepository) InTransaction(ctx context.Context, ex func(ctx context.Context, tx *gorm.DB) (int64, error)) (int64, error) {
+	return sql.ExecuteTx(ctx, r.db, ex)
 }

@@ -9,6 +9,7 @@ import (
 )
 
 func NewRoute(ctx context.Context, r *http.ServeMux, handler friend_domain.FriendTransport, logger *logger.Logger) {
-	handler_fnc.HandleWithSecurity(ctx, r, "/friend-request", http.MethodPost, "", logger, true, handler.Create)
-	handler_fnc.HandleWithSecurity(ctx, r, "/friend-request", http.MethodPatch, "/{id}/{action}", logger, true, handler.UpdateRequestStatus)
+	friend := "/friend"
+	handler_fnc.HandleWithSecurity(ctx, r, friend, http.MethodPost, "/{friendId}/add-friend", logger, true, handler.Create)
+	handler_fnc.HandleWithSecurity(ctx, r, friend, http.MethodPatch, "/{friendId}/{action}", logger, true, handler.Patch)
 }

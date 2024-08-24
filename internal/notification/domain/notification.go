@@ -19,7 +19,6 @@ type Notification struct {
 	CreatedBy   string       `json:"createdBy,omitempty" gorm:"column:created_by"`
 	UpdatedAt   time.Time    `json:"updatedAt,omitempty" gorm:"column:updated_at"`
 	UpdatedBy   string       `json:"updatedBy,omitempty" gorm:"column:updated_by"`
-	Deleted     bool         `json:"deleted,omitempty" gorm:"column:deleted"`
 }
 
 type Subscriber struct {
@@ -41,9 +40,16 @@ func (u Subscriber) Value() string {
 
 type Requester struct {
 	Id        string  `json:"id"`
-	RequestId *string `json:"requestId"`
 	Name      string  `json:"name"`
 	AvatarURL *string `json:"avatarURL"`
+}
+
+func NewRequester(Id string, name string, avatarURL *string) Requester {
+	return Requester{
+		Id:        Id,
+		Name:      name,
+		AvatarURL: avatarURL,
+	}
 }
 
 func (u *Requester) Scan(v interface{}) error {

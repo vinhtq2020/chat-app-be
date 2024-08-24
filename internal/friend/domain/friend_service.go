@@ -5,7 +5,8 @@ import (
 )
 
 type FriendService interface {
-	SendFriendRequest(ctx context.Context, friendRequest FriendRequest) (int64, error)
-	UpdateFriendRequest(ctx context.Context, requestId string, action string) (int64, error)
-	Delete(ctx context.Context, friendId string) (int64, error)
+	Create(ctx context.Context, userId string, friendId string, relation string) (int64, error)
+	Response(ctx context.Context, userId string, friendId string, action string) (int64, error)
+	Cancel(ctx context.Context, userId string, friendId string) (int64, error)
+	Unfriend(ctx context.Context, userId string, friendId string) (int64, error)
 }

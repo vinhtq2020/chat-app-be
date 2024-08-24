@@ -6,6 +6,7 @@ import (
 	"go-service/internal/friend/repository"
 	"go-service/internal/friend/usecase"
 	"go-service/internal/notification/domain"
+	sequence "go-service/internal/sequence/domain"
 	user_domain "go-service/internal/user/domain"
 	"go-service/pkg/database/postgres"
 	"go-service/pkg/logger"
@@ -13,10 +14,9 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewFriendHandler(db *gorm.DB, userRepository user_domain.UserRepository, notificationService domain.NotificationService, logger *logger.Logger, buildParan func(int) string) friend_domain.FriendTransport {
-	friendRqRepo := repository.NewRequestFriendRepository(db, "friend_requests", "users", logger, buildParan)
+func NewFriendHandler(db *gorm.DB, userRepository user_domain.UserRepository, notificationService domain.NotificationService, sequence sequence.SequenceService, logger *logger.Logger, buildParan func(int) string) friend_domain.FriendTransport {
 	friendRepo := repository.NewFriendRepository(db, logger, postgres.BuildParam)
-	sv := usecase.NewFriendService(friendRepo, friendRqRepo, userRepository, notificationService, logger)
+	sv := usecase.NewFriendService(friendRepo, userRepository, notificationService, sequence, logger)
 	handler := delivery.NewFriendHandler(sv, logger)
 	return handler
 }

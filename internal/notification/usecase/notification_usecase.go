@@ -75,7 +75,6 @@ func (sv *notificationService) Notify(ctx context.Context, generateId func() str
 		CreatedBy:   requester.Id,
 		UpdatedAt:   time.Now(),
 		UpdatedBy:   requester.Id,
-		Deleted:     true,
 	}
 
 	res, err := sv.storageRepository.Insert(ctx, notification)

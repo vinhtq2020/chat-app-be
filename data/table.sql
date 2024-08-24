@@ -46,24 +46,19 @@ create table if not exists sequences (
     sequence_no int4 default 1
 );
 
--- status: friend | none | blocked
-create table if not exists friends (
+-- use updated_by for check who is sender when status pending
+-- status: A | R | C |B | P
+-- relation_type: 'friend' | 'contact'
+create table if not exists relations (
     user_id1 varchar(255),
     user_id2 varchar(255),
+    relation_type varchar(255),
     status varchar(255),
-    primary key (user_id1, user_id2)
-);
-
-create table if not exists friend_requests (
-    id varchar(255) primary key,
-    requester_id varchar(255),
-    requestee_id varchar(255),
-    status VARCHAR(255),
-    created_at TIMESTAMPTZ,
+    created_at TIMESTAMPZ,
     created_by varchar(255),
-    updated_at TIMESTAMPTZ,
     updated_by varchar(255),
-    notification_id VARCHAR(255)
+    updated_at TIMESTAMPTZ,
+    primary key (user_id1, user_id2,relation_type)
 );
 
 create table if not exists refresh_tokens (
@@ -95,7 +90,6 @@ create table if not exists notifications(
     created_by VARCHAR(255),
     updated_at TIMESTAMPTZ,
     updated_by VARCHAR(255),
-    deleted BOOLEAN,
     primary key(id) 
 );
 

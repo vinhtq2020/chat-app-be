@@ -1,12 +1,10 @@
 package delivery
 
 import (
-	"encoding/json"
 	friend_domain "go-service/internal/friend/domain"
 	"go-service/pkg/logger"
 	"go-service/pkg/response"
 	"net/http"
-	"time"
 )
 
 type FriendHandler struct {
@@ -19,29 +17,21 @@ func NewFriendHandler(service friend_domain.FriendService, logger *logger.Logger
 }
 
 func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var friendRequest friend_domain.FriendRequest
-
+	var friend friend_domain.Relation
+	friendId := r.PathValue("friendId")
+	if len(friendId) == 0 {
+		response.Response(w, http.StatusBadRequest, nil)
+		return
+	}
 	userId, ok := r.Context().Value("userId").(string)
 	if !ok {
-		response.Response(w, http.StatusBadRequest, nil)
+		response.Response(w, http.StatusUnauthorized, nil)
 		return
 	}
 
-	err := json.NewDecoder(r.Body).Decode(&friendRequest)
-	if err != nil {
-		h.logger.LogError(err.Error(), nil)
-		response.Response(w, http.StatusBadRequest, nil)
-		return
-	}
-
-	if len(friendRequest.RequesteeId) > 0 && len(userId) > 0 {
-		friendRequest.CreatedAt = time.Now()
-		friendRequest.CreatedBy = userId
-		friendRequest.UpdatedAt = time.Now()
-		friendRequest.UpdatedBy = userId
-		friendRequest.RequesterId = userId
-
-		res, err := h.friendService.SendFriendRequest(r.Context(), friendRequest)
+	if len(friendId) > 0 {
+		friend.UserId2 = friendId
+		res, err := h.friendService.Create(r.Context(), userId, friendId, friend_domain.FriendRelation.Value())
 		handleResponse(w, res, err)
 	} else {
 		response.Response(w, http.StatusBadRequest, nil)
@@ -49,22 +39,34 @@ func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *FriendHandler) UpdateRequestStatus(w http.ResponseWriter, r *http.Request) {
-	requestId := r.PathValue("id")
+func (h *FriendHandler) Patch(w http.ResponseWriter, r *http.Request) {
+	var res int64
+	var err error
+	friendId := r.PathValue("friendId")
+	userId, ok := r.Context().Value("userId").(string)
+	if !ok {
+		response.Response(w, http.StatusUnauthorized, nil)
+		return
+	}
+
 	action := r.PathValue("action")
 
-	if len(requestId) == 0 && len(action) == 0 && action != "accept" && action != "reject" {
+	if len(friendId) == 0 && len(action) == 0 && action != "accept" && action != "reject" && action != "cancel" {
+		response.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	switch action {
+	case "accept", "reject":
+		res, err = h.friendService.Response(r.Context(), userId, friendId, action)
+	case "cancel":
+		res, err = h.friendService.Cancel(r.Context(), userId, friendId)
+	case "unfriend":
+		res, err = h.friendService.Unfriend(r.Context(), userId, friendId)
+	default:
 		response.Response(w, http.StatusBadRequest, nil)
 		return
 	}
 
-	// friendRequest["id"] = requestId
-	// friendRequest["requesteeId"] = userId
-	// friendRequest["action"] = action
-	// friendRequest["updatedAt"] = time.Now()
-	// friendRequest["updatedBy"] = userId
-
-	res, err := h.friendService.UpdateFriendRequest(r.Context(), requestId, action)
 	handleResponse(w, res, err)
 }
 

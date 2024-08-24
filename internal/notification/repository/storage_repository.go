@@ -138,9 +138,9 @@ func (r *notificationRepository) Patch(ctx context.Context, notification map[str
 
 func (r *notificationRepository) Delete(ctx context.Context, id string) (int64, error) {
 	db := sql.GetTx(ctx, r.db)
-	qr := "update %s where id = %s set deleted = %v"
-	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1), r.buildParam(2))
-	res, err := sql.Exec(db, stmt, r.logger, id, true)
+	qr := "delete from %s where id = %s"
+	stmt := fmt.Sprintf(qr, r.table, r.buildParam(1))
+	res, err := sql.Exec(db, stmt, r.logger, id)
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 	}
