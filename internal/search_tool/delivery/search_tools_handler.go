@@ -25,7 +25,13 @@ func (h *SearchToolsHandler) Search(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	res, total, list, err := h.service.Search(r.Context(), filter)
+
+	userId, ok := r.Context().Value("userId").(string)
+	if !ok {
+		response.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	res, total, list, err := h.service.Search(r.Context(), userId, filter)
 	if err != nil {
 		http.Error(w, "Internal Sever Error", http.StatusInternalServerError)
 	} else if res > 0 {

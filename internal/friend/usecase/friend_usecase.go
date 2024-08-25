@@ -55,20 +55,28 @@ func (u *FriendUsecase) Create(ctx context.Context, userId string, friendId stri
 		return -1, err
 	}
 
-	if friendRelation.Status == acceptFriend {
+	if friendRelation != nil && friendRelation.Status == acceptFriend {
 		return -1, nil
 	}
 
-	id, err := u.generateId(ctx)
-	notificationId := "N-" + id
-	if err != nil {
-		return -1, err
-	}
-
+	// add friend request
 	res, err := u.friendRepository.InTransaction(ctx, func(ctx context.Context, db *gorm.DB) (int64, error) {
-		// add friend request
-		relation := friend_domain.NewRelation(userId, friendId, userId, domain.FriendRelation, domain.StatusPending)
-		res, err := u.friendRepository.Upsert(ctx, relation)
+		id, err := u.generateId(ctx)
+		notificationId := "N-" + id
+		if err != nil {
+			return -1, err
+		}
+
+		if friendRelation == nil {
+			friendRelation = friend_domain.NewRelation(userId, friendId, userId, domain.FriendRelation, domain.StatusPending, notificationId)
+		} else {
+			friendRelation.Status = domain.StatusPending.Value()
+			friendRelation.NotificationId = notificationId
+			friendRelation.UpdatedBy = userId
+			friendRelation.UpdatedAt = time.Now()
+		}
+
+		res, err := u.friendRepository.Upsert(ctx, *friendRelation)
 		if err != nil {
 			return res, err
 		}
@@ -118,19 +126,19 @@ func (u *FriendUsecase) Cancel(ctx context.Context, userId string, friendId stri
 		return 0, err
 	}
 
+	// check is friend request pending
+	if friendRelation.Status != domain.StatusPending.Value() {
+		return -1, nil
+	}
+
 	// check user is friend request sender
 	if userId != friendRelation.UpdatedBy {
 		return -2, nil
 	}
 
-	// check is friend request pending
-	if friendRelation.Status != domain.StatusPending {
-		return -1, nil
-	}
-
 	res, err := u.friendRepository.InTransaction(ctx, func(ctx context.Context, db *gorm.DB) (int64, error) {
 		// cancel request
-		friendRelation.Status = friend_domain.StatusCancel
+		friendRelation.Status = friend_domain.StatusCancel.Value()
 		friendRelation.UpdatedBy = userId
 		friendRelation.UpdatedAt = time.Now()
 
@@ -141,13 +149,7 @@ func (u *FriendUsecase) Cancel(ctx context.Context, userId string, friendId stri
 		}
 
 		// delete notification invite in server
-		notifications, err := u.notificationService.Search(ctx, notification_domain.NotificationFilter{
-			SubscriberId: &friendId,
-		})
-		if err != nil || len(notifications) == 0 {
-			return 0, err
-		}
-		res, err = u.notificationService.Delete(ctx, notifications[0].Id)
+		res, err = u.notificationService.Delete(ctx, friendRelation.NotificationId)
 		if err != nil {
 			return res, err
 		}
@@ -169,24 +171,24 @@ func (u *FriendUsecase) Response(ctx context.Context, userId string, friendId st
 	}
 
 	// check is pending
-	if friendRelation.Status != domain.StatusPending {
+	if friendRelation.Status != domain.StatusPending.Value() {
 		return -1, nil
 	}
 
-	// check user is authorized to update status request. If is Sender, updatedBy now not replier (current is userId)
-	if userId != friendRelation.UpdatedBy {
+	// check user is authorized to update status request. If is Sender, updatedBy now must not replier (current is userId)
+	if userId == friendRelation.UpdatedBy {
 		return -2, nil
 	}
 
 	res, err := u.friendRepository.InTransaction(ctx, func(ctx context.Context, db *gorm.DB) (int64, error) {
 		if action == domain.AcceptAction {
-			friendRelation.Status = friend_domain.StatusAccept
+			friendRelation.Status = friend_domain.StatusAccept.Value()
 			receiverTitle = acceptFriend
 			receiverContent = acceptFriend
 			senderTitle = yourAcceptFriend
 			senderContent = yourAcceptFriend
 		} else if action == domain.RejectAction {
-			friendRelation.Status = friend_domain.StatusReject
+			friendRelation.Status = friend_domain.StatusReject.Value()
 			receiverTitle = rejectFriend
 			receiverContent = rejectFriend
 			senderTitle = yourRejectFriend
@@ -203,23 +205,16 @@ func (u *FriendUsecase) Response(ctx context.Context, userId string, friendId st
 		}
 
 		// update invite notification to success and notify this to sender(requestee)
-		notifications, err := u.notificationService.Search(ctx, notification_domain.NotificationFilter{
-			SubscriberId: &friendId,
-		})
-		if err != nil || len(notifications) == 0 {
-			return 0, err
-		}
-
-		res, err = u.notificationService.UpdateNotify(ctx, notifications[0].Id, senderTitle, senderContent, userId, notification_domain.NotificationInform, nil, false)
-		if err != nil {
+		res, err = u.notificationService.UpdateNotify(ctx, friendRelation.NotificationId, senderTitle, senderContent, userId, notification_domain.NotificationInform, nil, false)
+		if err != nil || res != 1 {
 			return res, err
 		}
 
 		// notify to requester that requestee accepted
 		userInfo, err := u.userInfoRepository.Load(ctx, userId)
 
-		if err != nil {
-			return res, err
+		if err != nil || userInfo == nil {
+			return 0, err
 		}
 
 		requester := notification_domain.Requester{
@@ -234,8 +229,8 @@ func (u *FriendUsecase) Response(ctx context.Context, userId string, friendId st
 		}
 
 		res, err = u.notificationService.Notify(ctx, func() string {
-			return notificationId
-		}, requester, receiverTitle, receiverContent, []string{userId}, nil, notification_domain.NotificationInform)
+			return fmt.Sprintf("R-%s", notificationId)
+		}, requester, receiverTitle, receiverContent, []string{friendId}, nil, notification_domain.NotificationInform)
 
 		return res, err
 	})
@@ -249,13 +244,13 @@ func (u *FriendUsecase) Unfriend(ctx context.Context, userId string, friendId st
 	if err != nil || friendRelation == nil {
 		return 0, err
 	}
-	if friendRelation.Status != domain.AcceptAction {
+	if friendRelation.Status != domain.StatusAccept.Value() {
 		return -1, nil
 	}
 
 	friendRelation.UpdatedBy = userId
 	friendRelation.UpdatedAt = time.Now()
-	friendRelation.Status = domain.StatusUnfriend
+	friendRelation.Status = domain.StatusUnfriend.Value()
 	friendRelationMap := convert.ToMapOmitEmpty(friendRelation)
 
 	res, err := u.friendRepository.Patch(ctx, friendRelationMap)

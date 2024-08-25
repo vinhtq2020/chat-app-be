@@ -3,17 +3,16 @@ package usecase
 import (
 	"context"
 	"go-service/internal/notification/domain"
-	domain_notification "go-service/internal/notification/domain"
 	"go-service/pkg/convert"
 	"time"
 )
 
 type notificationService struct {
 	broastcast        chan domain.Message
-	storageRepository domain_notification.NotificationRepository
+	storageRepository domain.NotificationRepository
 }
 
-func NewNotificationService(storageRepository domain_notification.NotificationRepository, broastcast chan domain.Message) *notificationService {
+func NewNotificationService(storageRepository domain.NotificationRepository, broastcast chan domain.Message) *notificationService {
 	return &notificationService{
 		storageRepository: storageRepository,
 		broastcast:        broastcast,
@@ -43,11 +42,19 @@ func (sv *notificationService) UpdateNotify(ctx context.Context, notificationId 
 	}
 
 	sv.broastcast <- domain.Message{
-		Name: domain_notification.UPDATED,
+		Name: domain.UPDATED,
 		Data: *notification,
 	}
 
 	return res, nil
+}
+
+func (sv *notificationService) Load(ctx context.Context, id string) (*domain.Notification, error) {
+	notification, err := sv.storageRepository.Load(ctx, id)
+	if err != nil || notification == nil {
+		return nil, err
+	}
+	return notification, nil
 }
 
 func (sv *notificationService) Search(ctx context.Context, filter domain.NotificationFilter) ([]domain.Notification, error) {
@@ -55,15 +62,15 @@ func (sv *notificationService) Search(ctx context.Context, filter domain.Notific
 }
 
 func (sv *notificationService) Notify(ctx context.Context, generateId func() string, requester domain.Requester, title string, content string, subscriberIds []string, url *string, notificationType string) (int64, error) {
-	var subscribers []domain_notification.Subscriber
+	var subscribers []domain.Subscriber
 	for _, v := range subscriberIds {
-		subscribers = append(subscribers, domain_notification.Subscriber{
+		subscribers = append(subscribers, domain.Subscriber{
 			Id:     v,
 			Readed: false,
 		})
 	}
 
-	notification := domain_notification.Notification{
+	notification := domain.Notification{
 		Id:          generateId(),
 		Requester:   requester,
 		Title:       title,

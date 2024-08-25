@@ -119,6 +119,8 @@ func (r *notificationRepository) Load(ctx context.Context, notificationId string
 	if err != nil {
 		r.logger.LogError(err.Error(), nil)
 		return nil, err
+	} else if len(res) == 0 {
+		return nil, nil
 	}
 	return &res[0], nil
 }

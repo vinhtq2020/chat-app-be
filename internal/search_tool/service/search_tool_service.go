@@ -15,12 +15,8 @@ func NewSearchToolService(repository domain.SearchToolRepository) SearchToolServ
 	}
 }
 
-func (sv *SearchToolService) Search(ctx context.Context, filter domain.SearchFilter) (code int64, total int64, list []domain.SearchItem, err error) {
-	userId := ctx.Value("userId")
-	if userId == nil {
-		userId = ""
-	}
-	res, err := sv.repository.Search(ctx, userId.(string), filter)
+func (sv *SearchToolService) Search(ctx context.Context, userId string, filter domain.SearchFilter) (code int64, total int64, list []domain.SearchItem, err error) {
+	res, err := sv.repository.Search(ctx, userId, filter)
 	if err != nil {
 		return -1, 0, res, err
 	}

@@ -17,7 +17,6 @@ func NewFriendHandler(service friend_domain.FriendService, logger *logger.Logger
 }
 
 func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var friend friend_domain.Relation
 	friendId := r.PathValue("friendId")
 	if len(friendId) == 0 {
 		response.Response(w, http.StatusBadRequest, nil)
@@ -30,7 +29,6 @@ func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(friendId) > 0 {
-		friend.UserId2 = friendId
 		res, err := h.friendService.Create(r.Context(), userId, friendId, friend_domain.FriendRelation.Value())
 		handleResponse(w, res, err)
 	} else {

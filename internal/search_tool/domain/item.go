@@ -8,6 +8,5 @@ type SearchItem struct {
 	Avatar       *string `json:"avatar,omitempty" gorm:"column:avatar_url"`
 	Carrier      *string `json:"carrier,omitempty" gorm:"column:carrier"`
 	FriendStatus *string `json:"friendStatus,omitempty" gorm:"column:friend_status"`
-	RequestId    *string `json:"requestId,omitempty" gorm:"column:request_id"`
 	Type         *string `json:"type,omitempty" gorm:"column:type"`
 }

@@ -16,9 +16,14 @@ import (
 
 func Query(db *gorm.DB, sql string, result interface{}, logger *logger.Logger, value ...interface{}) error {
 	if logger != nil {
-		logger.LogError(fmt.Sprintf("%v %v", sql, value), nil)
+		logger.LogInfo(fmt.Sprintf("%v %v", sql, value), nil)
 	}
-	err := db.Raw(sql, value...).Scan(&result).Error
+	tx := db.Raw(sql, value...)
+	err := tx.Error
+	if err != nil {
+		return err
+	}
+	err = tx.Scan(&result).Error
 	return err
 }
 
@@ -193,7 +198,7 @@ func BuildToPatch(db *gorm.DB, table string, modelType reflect.Type, params map[
 	if len(where) != len(keys) {
 		return "", nil, errors.New("not have full primary keys")
 	}
-	sql := fmt.Sprintf("update %v set %v where %v", table, strings.Join(set, ", "), strings.Join(where, "and "))
+	sql := fmt.Sprintf("update %v set %v where %v", table, strings.Join(set, ", "), strings.Join(where, " and "))
 	return sql, setValue, nil
 }
 

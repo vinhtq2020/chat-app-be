@@ -54,10 +54,11 @@ create table if not exists relations (
     user_id2 varchar(255),
     relation_type varchar(255),
     status varchar(255),
-    created_at TIMESTAMPZ,
+    created_at TIMESTAMPTZ,
     created_by varchar(255),
     updated_by varchar(255),
     updated_at TIMESTAMPTZ,
+    notification_id varchar(255),
     primary key (user_id1, user_id2,relation_type)
 );
 

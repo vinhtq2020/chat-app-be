@@ -107,7 +107,7 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	go notification.HandleMessages()
 	searchTool := search_tool.NewSearchToolTransport(db, postgres.BuildParam, logger, toArray)
 
-	friend := friend.NewFriendHandler(db, userRepository, notificationService, sequenceService, logger, postgres.BuildParam)
+	friend := friend.NewFriendHandler(db, userRepository, notificationService, sequenceService, logger, postgres.BuildParam, toArray)
 	return &App{
 		Auth:         auth,
 		User:         user,
