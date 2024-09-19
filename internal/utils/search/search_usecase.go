@@ -4,18 +4,18 @@ import (
 	"golang.org/x/net/context"
 )
 
-type searchUsecase[T any] struct {
-	repo SearchRepository
+type searchUsecase[F any] struct {
+	repo SearchRepository[F]
 }
 
-func NewSearchService[T any](repo SearchRepository) *searchUsecase[T] {
-	return &searchUsecase[T]{
+func NewSearchService[F any](repo SearchRepository[F]) *searchUsecase[F] {
+	return &searchUsecase[F]{
 		repo: repo,
 	}
 }
 
-func (f *searchUsecase[T]) Search(ctx context.Context, filter SearchFilter) (interface{}, int64, error) {
-	list := []T{}
+func (f *searchUsecase[F]) Search(ctx context.Context, filter F) (interface{}, int64, error) {
+	list := []interface{}{}
 
 	err := f.repo.Search(ctx, &list, filter)
 	if err != nil {

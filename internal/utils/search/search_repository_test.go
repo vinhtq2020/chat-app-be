@@ -52,7 +52,7 @@ func TestNewSearchRepository(t *testing.T) {
 
 	for _, v := range testCases {
 		t.Run(v.Name, func(t *testing.T) {
-			repo := NewSearchRepository(v.Input.table, v.Input.DB, v.Input.toArray)
+			repo := NewSearchRepository[any](v.Input.table, v.Input.DB, v.Input.toArray, nil)
 			if repo == nil {
 				t.Errorf("actual value: %v, expected %v", repo != nil, v.Expected)
 			} else {

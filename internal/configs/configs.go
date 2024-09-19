@@ -1,10 +1,18 @@
 package configs
 
 type Config struct {
-	AccessTokenSecretKey string         `yaml:"accessTokenSecretKey" json:"accessTokenSecretKey"`
-	MongoConfig          MongoConfig    `yaml:"mongo" json:"mongoConfig"`
-	RedisConfig          RedisConfig    `yaml:"redis" json:"redisConfig"`
-	PostgresConfig       PostgresConfig `yaml:"postgres" json:"postgresConfig"`
+	MongoConfig    MongoConfig        `yaml:"mongo" json:"mongoConfig"`
+	RedisConfig    RedisConfig        `yaml:"redis" json:"redisConfig"`
+	PostgresConfig PostgresConfig     `yaml:"postgres" json:"postgresConfig"`
+	Keys           Keys               `yaml:"keys" json:"keys"`
+	Address        Address            `yaml:"address" json:"address"`
+	Inbound        map[string]Address `yaml:"inbound" json:"inbound"`
+	Outbound       map[string]Address `yaml:"outbound" json:"outbound"`
+}
+
+type Address struct {
+	Host string `yaml:"host" json:"host"`
+	Port string `yaml:"port" json:"port"`
 }
 
 type MongoConfig struct {
@@ -20,4 +28,9 @@ type RedisConfig struct {
 
 type PostgresConfig struct {
 	DSN string `yaml:"dsn" json:"dsn"`
+}
+
+type Keys struct {
+	ApiGateway           string `yaml:"apiGateway" json:"apiGateway"`
+	AccessTokenSecretKey string `yaml:"accessTokenSecretKey" json:"accessTokenSecretKey"`
 }

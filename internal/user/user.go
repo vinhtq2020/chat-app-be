@@ -14,8 +14,8 @@ import (
 
 func NewUserTransport(db *gorm.DB, userRepository user_domain.UserRepository, toArray pq.Array) user_domain.UserTransport {
 	service := usecase.NewUserUsecase(userRepository)
-	searchRepo := search.NewSearchRepository("users", db, toArray)
-	searchService := search.NewSearchService[user_domain.User](searchRepo)
+	searchRepo := search.NewSearchRepository[user_domain.UserFilter]("users", db, toArray, nil)
+	searchService := search.NewSearchService(searchRepo)
 	handler := delivery.NewUserHandler(service, searchService)
 	return handler
 }

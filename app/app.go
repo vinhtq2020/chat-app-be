@@ -12,8 +12,10 @@ import (
 	"go-service/internal/configs"
 	"go-service/internal/friend"
 	friend_domain "go-service/internal/friend/domain"
+	"go-service/internal/friend/repository"
 	"go-service/internal/notification"
 	"go-service/internal/notification/domain"
+	"go-service/internal/utils/search"
 	"net/http"
 
 	"go-service/internal/room"
@@ -81,7 +83,7 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	}
 	sequenceService := sequence.NewSequenceService(db)
 
-	auth := auth.NewAuthTransport(db, validate, logger, configs.AccessTokenSecretKey, toArray)
+	auth := auth.NewAuthTransport(db, validate, logger, configs.Keys.AccessTokenSecretKey, toArray)
 	room := room.NewRoomTransport(db, sequenceService.Next, upgrader, logger, toArray)
 
 	userRepository := user.NewUserRepository(db, logger, toArray)
@@ -107,7 +109,9 @@ func NewApp(ctx context.Context, mongoClient *mongo.Client, rdb *redis.Client, c
 	go notification.HandleMessages()
 	searchTool := search_tool.NewSearchToolTransport(db, postgres.BuildParam, logger, toArray)
 
-	friend := friend.NewFriendHandler(db, userRepository, notificationService, sequenceService, logger, postgres.BuildParam, toArray)
+	friendSearchRepository := search.NewSearchRepository("relations", db, toArray, repository.BuildQuery)
+	friendSearchService := search.NewSearchService(friendSearchRepository)
+	friend := friend.NewFriendHandler(db, userRepository, notificationService, friendSearchService, sequenceService, logger, postgres.BuildParam, toArray)
 	return &App{
 		Auth:         auth,
 		User:         user,

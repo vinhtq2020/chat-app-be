@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-type SearchRepository interface {
-	Search(ctx context.Context, result interface{}, filter SearchFilter) error
+type SearchRepository[F any] interface {
+	Search(ctx context.Context, result interface{}, filter F) error
 	Total(ctx context.Context) (int64, error)
 }

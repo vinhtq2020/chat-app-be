@@ -2,18 +2,40 @@ package delivery
 
 import (
 	friend_domain "go-service/internal/friend/domain"
+	"go-service/internal/utils/search"
 	"go-service/pkg/logger"
+	"go-service/pkg/model"
 	"go-service/pkg/response"
 	"net/http"
 )
 
 type FriendHandler struct {
+	searchService search.SearchService[friend_domain.FriendFilter]
 	friendService friend_domain.FriendService
 	logger        *logger.Logger
 }
 
-func NewFriendHandler(service friend_domain.FriendService, logger *logger.Logger) *FriendHandler {
-	return &FriendHandler{friendService: service, logger: logger}
+func NewFriendHandler(service friend_domain.FriendService, searchService search.SearchService[friend_domain.FriendFilter], logger *logger.Logger) *FriendHandler {
+	return &FriendHandler{friendService: service, searchService: searchService, logger: logger}
+}
+
+func (h *FriendHandler) Search(w http.ResponseWriter, r *http.Request) {
+	var filter friend_domain.FriendFilter
+	err := search.Bind(r, &filter)
+	if err != nil {
+		response.Response(w, http.StatusBadRequest, nil)
+		return
+	}
+	list, total, err := h.searchService.Search(r.Context(), filter)
+	if err != nil {
+		response.Response(w, http.StatusInternalServerError, nil)
+		return
+	}
+	response.Response(w, http.StatusOK, model.SearchResult{
+		List:  list,
+		Total: total,
+	})
+
 }
 
 func (h *FriendHandler) Create(w http.ResponseWriter, r *http.Request) {

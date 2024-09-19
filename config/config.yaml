@@ -1,4 +1,17 @@
-accessTokenSecretKey: my-secret-key
+address:
+  host: localhost
+  port: 8081
+inbound:
+  apiGateway:
+    host: localhost
+    port: 8080
+  client:
+    host: localhost
+    port: 3000
+outbound:
+  apiGateway:
+    host: localhost
+    port: 8080
 mongo:
   database: autocomplete-search
   URI: mongodb+srv://quangvinh2015vi:cRG2NHc6F8d9Z9pg@cluster0.po60fij.mongodb.net/?retryWrites=true&w=majority
@@ -11,3 +24,7 @@ redis:
 postgres:
   # dsn: host=localhost user=postgres password=postgres dbname=postgres port=5432 sslmode=disable
   dsn: host=ep-raspy-forest-a5bx1vgo.us-east-2.aws.neon.tech user=neondb_owner dbname=neondb password=DSROgTmro3A4 port=5432 sslmode=require
+
+keys:
+  apiGateway: "API-GATEWAY-KEY"
+  accessTokenSecretKey: my-secret-key

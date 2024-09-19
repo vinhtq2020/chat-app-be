@@ -166,13 +166,15 @@ func (h *AuthHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 		response.Response(w, http.StatusConflict, nil)
 	} else if res == -2 {
 		response.Response(w, http.StatusUnauthorized, nil)
+	} else {
+		http.SetCookie(w, &http.Cookie{
+			Name:     "accessToken",
+			Value:    newToken,
+			Expires:  time.Now().Add(jwt.AccessTokenDuration),
+			HttpOnly: true,
+			Secure:   true,
+		})
+		response.Response(w, http.StatusOK, 1)
 	}
-	http.SetCookie(w, &http.Cookie{
-		Name:     "accessToken",
-		Value:    newToken,
-		Expires:  time.Now().Add(jwt.AccessTokenDuration),
-		HttpOnly: true,
-		Secure:   true,
-	})
-	response.Response(w, http.StatusOK, 1)
+
 }

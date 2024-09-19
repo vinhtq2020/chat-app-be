@@ -3,6 +3,7 @@ package handler_fnc
 import (
 	"context"
 	"fmt"
+	"go-service/internal/configs"
 	"go-service/pkg/jwt"
 	"go-service/pkg/logger"
 	"go-service/pkg/response"
@@ -16,7 +17,10 @@ import (
 
 func HandleWithSecurity(ctx context.Context, router *http.ServeMux, routerGroup string, httpMethod string, relativePath string, logger *logger.Logger, security bool, handlerFunc func(http.ResponseWriter, *http.Request)) {
 	handlerFnc := func(w http.ResponseWriter, r *http.Request) {
-		if security {
+		allow := ipFilter(ctx, r)
+		if !allow {
+			response.Response(w, http.StatusUnauthorized, "Unauthorized")
+		} else if security {
 			// error always return http.ErrNoCookie if not found cookie
 			c, err := r.Cookie("accessToken")
 			if err != nil {
@@ -97,4 +101,14 @@ func LogRequestHandler(h http.Handler, logger *logger.Logger) http.Handler {
 		rec.Body.WriteTo(w)
 	}
 	return http.HandlerFunc(fn)
+}
+
+func ipFilter(ctx context.Context, r *http.Request) bool {
+	inbound := ctx.Value("inbound").(map[string]configs.Address)
+	for _, v := range inbound {
+		if v.Host == r.Host && v.Port == r.URL.Port() {
+			return true
+		}
+	}
+	return false
 }

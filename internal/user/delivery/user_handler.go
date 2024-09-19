@@ -11,10 +11,10 @@ import (
 
 type UserHandler struct {
 	service       user_domain.UserService
-	searchService search.SearchService
+	searchService search.SearchService[user_domain.UserFilter]
 }
 
-func NewUserHandler(service user_domain.UserService, searchService search.SearchService) *UserHandler {
+func NewUserHandler(service user_domain.UserService, searchService search.SearchService[user_domain.UserFilter]) *UserHandler {
 	return &UserHandler{
 		service:       service,
 		searchService: searchService,
@@ -22,7 +22,7 @@ func NewUserHandler(service user_domain.UserService, searchService search.Search
 }
 
 func (u *UserHandler) Search(w http.ResponseWriter, r *http.Request) {
-	var filter search.SearchFilter
+	var filter user_domain.UserFilter
 
 	if r.Method == http.MethodGet {
 		queryParams := r.URL.Query()

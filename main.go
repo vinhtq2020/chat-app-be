@@ -9,6 +9,7 @@ import (
 	"go-service/pkg/database/mongo"
 	"go-service/pkg/handler_fnc"
 	"go-service/pkg/logger"
+	"log"
 	"net/http"
 	"os"
 
@@ -26,8 +27,9 @@ func main() {
 		logger.LogError(err.Error(), nil)
 		return
 	}
-	ctx = context.WithValue(ctx, "secretKey", configs.AccessTokenSecretKey)
-
+	ctx = context.WithValue(ctx, "secretKey", configs.Keys.AccessTokenSecretKey)
+	ctx = context.WithValue(ctx, "inbound", configs.Inbound)
+	ctx = context.WithValue(ctx, "outbound", configs.Outbound)
 	mongoClient, err := mongo.NewMongoClient(context.Background(), mongo.MongoConfig{URI: configs.MongoConfig.URI})
 	if err != nil {
 		logger.LogError(err.Error(), nil)
@@ -67,11 +69,8 @@ func main() {
 	}
 
 	route.Route(ctx, mux, app, logger, app.Auth.RefreshToken)
-	err = http.ListenAndServe(":8080", handler_fnc.LogRequestHandler(mux, logger))
-	if err != nil {
-		logger.LogError(err.Error(), nil)
-		return
-	}
+	logger.LogInfo("start listen on port 8080", nil)
+	log.Fatal(http.ListenAndServe(":8080", handler_fnc.LogRequestHandler(mux, logger)))
 
 }
 

@@ -2,6 +2,6 @@ package search
 
 import "context"
 
-type SearchService interface {
-	Search(ctx context.Context, filter SearchFilter) (list interface{}, total int64, err error)
+type SearchService[F any] interface {
+	Search(ctx context.Context, filter F) (list interface{}, total int64, err error)
 }
